@@ -163,8 +163,62 @@
 #include "Lander_Control.h"
 #include "stdio.h"
 
-bool landing = false;
-bool landed = false;
+struct LanderState {
+ // Physical properties of the craft
+ double altitude; // Vertical distance from the ground
+ double pos_x;
+ double vel_x, vel_y;
+
+ // Calculated properies of the craft
+ double landing_acc; // Vertical acceleration required to stop the craft at the ground based on the current falling rate
+};
+
+enum LandingPhase {
+  FALLING,
+  LANDING_BURN,
+  LANDED
+};
+
+// Constants
+double k = 5.5; // Constant adjustment factor to make physics work properly (determined by trial and error)
+double landing_cutoff_v = -0.1; // Minimum vertical velocity (signed) needed to end the landing burn;
+double landing_burn_target_acc = 30.0;
+
+// Gobally declared state variables
+struct LanderState lander_state;
+enum LandingPhase landing_phase = FALLING;
+
+struct LanderState calculateLanderState() {
+ struct LanderState ls;
+
+ ls.altitude = RangeDist();
+ ls.pos_x = Position_X();
+ ls.vel_y = Velocity_Y();
+
+ ls.landing_acc = k * ls.vel_y * ls.vel_y / (2 * ls.altitude) + 8.87;
+
+ return ls;
+}
+
+void displayState(const struct LanderState *lander_state, enum LandingPhase phase) {
+ printf("===== Lander State ===============================\n");
+ printf("PHASE:                        %d\n", phase);
+ printf("Velocity Y:                   %f\n", lander_state->vel_y);
+ printf("Altitude Gnd:                 %f\n", lander_state->altitude);
+ printf("Landing Acc:                  %f\n", lander_state->landing_acc);
+}
+
+enum LandingPhase determineLandingPhase(enum LandingPhase current_phase, const struct LanderState *lander_state) {
+ if (current_phase == LANDED || current_phase == LANDING_BURN && lander_state->vel_y >= landing_cutoff_v) {
+  return LANDED;
+ } if (current_phase == LANDING_BURN && (lander_state->landing_acc < 13 || lander_state->vel_y >= landing_cutoff_v)) {
+  return FALLING;
+ } else if (lander_state->landing_acc >= landing_burn_target_acc) {
+  return LANDING_BURN;
+ } else {
+  return current_phase;
+ }
+}
 
 void Lander_Control(void)
 {
@@ -217,7 +271,16 @@ void Lander_Control(void)
         ACCESS THE SIMULATION STATE. That's cheating,
         I'll give you zero.
 **************************************************/
-  
+ 
+ lander_state = calculateLanderState();
+ landing_phase = determineLandingPhase(landing_phase, &lander_state);
+ displayState(&lander_state, landing_phase);
+ 
+ if (landing_phase == LANDED) {
+  // Turn off engine and do nothing else
+  Main_Thruster(0);
+  return;
+ }
  
  if (Angle()>2&&Angle()<358)
  {
@@ -225,37 +288,16 @@ void Lander_Control(void)
   else Rotate(-Angle());
   return;
  }
- double k = 5.5;
- double alt = RangeDist();
- double v0 = Velocity_Y();
- double landing_a = v0 * v0 * k / (2 * alt) + 8.87;
 
-//  double stop_dist = (v0 * v0) / (2 * suicide_a);
- if (landing_a > 35.0) {
-  if (landing == false) {
-    printf("Starting landing phase\n =======================");
-  }
-  landing = true;
- }
-
- if (v0 > -0.1) landed = true;
-
- if (landed) {
+ if (landing_phase == FALLING) {
   Main_Thruster(0);
-  return;
  }
-
- printf("Velocity: %f\n", v0);
- printf("Range dist: %f\n", alt);
- if (landing) {
-  double thrust = landing_a / 35.0;
+ 
+ if (landing_phase == LANDING_BURN) {
+  double thrust = lander_state.landing_acc / 35.0; // Convert to main thruster level
   printf("Burning at thrust %f\n", thrust);
   Main_Thruster(thrust);
- } else {
-  printf("Stop a: %f\n", landing_a);
-}
-
-//  Main_Thruster(0.253429 + Velocity_Y() * -0.1);
+ }
 }
 
 void Safety_Override(void)
