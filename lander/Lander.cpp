@@ -185,10 +185,10 @@ enum LandingPhase {
 
 // Constants
 double k = 5.5; // Constant adjustment factor to make physics work properly (determined by trial and error)
-double target_start_y = 70; // The y value that the craft wants to attain before attempting to land
-double landing_cutoff_v = -5; // Minimum vertical velocity (signed) needed to end the landing burn;
+double target_start_y = 70.0; // The y value that the craft wants to attain before attempting to land
+double landing_cutoff_v = -5.0; // Minimum vertical velocity (signed) needed to end the landing burn;
 double landing_burn_k = 1.0; // Ideal acceleration to do the landing burn at as a multiple of max_acc
-double landing_height_offset = 25.0; // Height at which the lander will come to a stop above the landing pad
+double landing_height_offset = 30.0; // Height at which the lander will come to a stop above the landing pad
 
 // Gobally declared state variables
 struct LanderState ls;
@@ -262,18 +262,19 @@ enum LandingPhase determineLandingPhase(enum LandingPhase current_phase, const s
  double landing_burn_target_acc = ls->max_acc * landing_burn_k;
  if (current_phase == GAIN_ALTITUDE) {
   bool zero_x_vel = fabs(ls->vel_x) < 0.01;
-  bool zero_y_vel = fabs(ls->vel_x) < 0.01;
+  bool zero_y_vel = fabs(ls->vel_y) < 0.01;
   bool target_alt = fabs(ls->pos_y - target_start_y < 1);
   if (zero_x_vel && zero_y_vel && target_alt) {
     return GO_ABOVE_LANDING_SITE;
   }
  } else if (current_phase == GO_ABOVE_LANDING_SITE) {
-  bool target_x = ls->pos_x - PLAT_X < 10;
+  bool target_x = fabs(ls->pos_x - PLAT_X) < 10;
   bool zero_x_vel = fabs(ls->vel_x) < .1;
   if (zero_x_vel && target_x) {
     return FALLING;
   }
- } else if (current_phase == LANDED || current_phase == LANDING_BURN && ls->vel_y >= landing_cutoff_v) {
+ } else if (current_phase == LANDED || 
+  ((current_phase == LANDING_BURN || current_phase == FALLING) && ls->vel_y >= landing_cutoff_v && fabs(ls->vel_x) <= landing_cutoff_v)) {
   return LANDED;
  } if (current_phase == LANDING_BURN && (ls->landing_acc < landing_burn_target_acc / 2.0 || ls->vel_y >= landing_cutoff_v)) {
   return FALLING;
@@ -340,29 +341,24 @@ void Lander_Control(void)
  landing_phase = determineLandingPhase(landing_phase, &ls);
  displayState(&ls, landing_phase);
 
- double delta_y = ls.pos_y - target_start_y;
+ double target_vx = -0.5 * (ls.pos_x - PLAT_X);
+ double target_vy = -0.5 * (ls.pos_y - target_start_y);
+ double target_ax = -0.5 * (ls.vel_x - target_vx);
+ double target_ay = -0.5 * (-1 * ls.vel_y - target_vy) - (G_ACCEL);
+ target_vx = (target_vx > 0) ? fmin(target_vx, 2) : fmax(target_vx, -2);
+ target_vy = (target_vy > 0) ? fmin(target_vy, 10) : fmax(target_vy, -10);
  if (landing_phase == GAIN_ALTITUDE) {
-  double a = 10;
-  double b = 1;
-  double c = 0.25;
-  thrustVector(-1 * a * ls.vel_x, -(G_ACCEL) + b * ls.vel_y + -1 * c * delta_y, &ls);
+  double c = 10;
+  thrustVector(-1 * c * ls.vel_x, target_ay, &ls);
  } else if (landing_phase == GO_ABOVE_LANDING_SITE) {
-  double a = 1;
-  double b = 2;
-  double c = 1;
-  double d = 0.25;
-  double delta_x = ls.pos_x - PLAT_X;
-  thrustVector(
-    -1 * a * ls.vel_x + b * (delta_x < 0 ? 1 : -1) * log(fabs(delta_x) + 100),
-    (-G_ACCEL + c * ls.vel_y) + (-1 * d * delta_y),
-    &ls);
+  thrustVector(target_ax, target_ay, &ls);
  } else if (landing_phase == FALLING) {
   orientLander(0, &ls);
   Main_Thruster(0);
   Left_Thruster(0);
   Right_Thruster(0);
  } else if (landing_phase == LANDING_BURN) {
-  thrustAngle(0, ls.landing_acc, &ls);
+  thrustVector(target_ax, -1 * ls.landing_acc, &ls);
  } else {
   // Turn off engine and do nothing else
   Main_Thruster(0);
