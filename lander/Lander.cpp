@@ -168,6 +168,7 @@ struct LanderState {
  double altitude; // Vertical distance from the ground
  double pos_x;
  double vel_x, vel_y;
+ double angle; // Current spacecraft angle in degrees
 
  // Calculated properies of the craft
  double landing_acc; // Vertical acceleration required to stop the craft at the ground based on the current falling rate
@@ -183,6 +184,7 @@ enum LandingPhase {
 double k = 5.5; // Constant adjustment factor to make physics work properly (determined by trial and error)
 double landing_cutoff_v = -0.1; // Minimum vertical velocity (signed) needed to end the landing burn;
 double landing_burn_target_acc = 30.0;
+double landing_height_offset = 15.0; // Height at which the lander will come to a stop above the landing pad
 
 // Gobally declared state variables
 struct LanderState lander_state;
@@ -194,10 +196,25 @@ struct LanderState calculateLanderState() {
  ls.altitude = RangeDist();
  ls.pos_x = Position_X();
  ls.vel_y = Velocity_Y();
+ ls.angle = fmod(Angle(), 360.0);
 
- ls.landing_acc = k * ls.vel_y * ls.vel_y / (2 * ls.altitude) + 8.87;
+ ls.landing_acc = k * ls.vel_y * ls.vel_y / (2 * (ls.altitude - landing_height_offset)) + 8.87;
 
  return ls;
+}
+
+void thrustVector(double angle_rad, double acceleration, const struct LanderState *ls) {
+  double epsilon = 2.0;
+  double target_angle = fmod((angle_rad / (2.0 * PI)) * 360.0, 360.0); // Convert to degrees
+  double angle_delta = fmod((ls->angle - target_angle + 540.0), 360.0) - 180.0;
+  double thrust = acceleration / 35.0; // Convert to main thruster level
+
+  if (fabs(angle_delta) > epsilon) {
+    Rotate(-1 * angle_delta);
+  }
+  
+  printf("Burning at thrust %f\n", thrust);
+  Main_Thruster(thrust);
 }
 
 void displayState(const struct LanderState *lander_state, enum LandingPhase phase) {
@@ -275,28 +292,17 @@ void Lander_Control(void)
  lander_state = calculateLanderState();
  landing_phase = determineLandingPhase(landing_phase, &lander_state);
  displayState(&lander_state, landing_phase);
- 
+
  if (landing_phase == LANDED) {
   // Turn off engine and do nothing else
   Main_Thruster(0);
   return;
  }
- 
- if (Angle()>2&&Angle()<358)
- {
-  if (Angle()>=180) Rotate(360-Angle());
-  else Rotate(-Angle());
-  return;
- }
 
  if (landing_phase == FALLING) {
-  Main_Thruster(0);
- }
- 
- if (landing_phase == LANDING_BURN) {
-  double thrust = lander_state.landing_acc / 35.0; // Convert to main thruster level
-  printf("Burning at thrust %f\n", thrust);
-  Main_Thruster(thrust);
+  thrustVector(0, 0, &lander_state);
+ } else if (landing_phase == LANDING_BURN) {
+  thrustVector(0, lander_state.landing_acc, &lander_state);
  }
 }
 
