@@ -171,6 +171,7 @@ struct LanderState {
  double angle; // Current spacecraft angle in degrees
 
  // Calculated properies of the craft
+ double max_acc; // Maximum acceleration based on available thrusters
  double landing_acc; // Vertical acceleration required to stop the craft at the ground based on the current falling rate
 };
 
@@ -183,7 +184,7 @@ enum LandingPhase {
 // Constants
 double k = 5.5; // Constant adjustment factor to make physics work properly (determined by trial and error)
 double landing_cutoff_v = -5; // Minimum vertical velocity (signed) needed to end the landing burn;
-double landing_burn_target_acc = 20.0;
+double landing_burn_k = 1.0; // Ideal acceleration to do the landing burn at as a multiple of max_acc
 double landing_height_offset = 25.0; // Height at which the lander will come to a stop above the landing pad
 
 // Gobally declared state variables
@@ -199,7 +200,7 @@ struct LanderState calculateLanderState() {
  ls.angle = fmod(Angle(), 360.0);
 
  ls.landing_acc = k * ls.vel_y * ls.vel_y / (2 * (ls.altitude - landing_height_offset)) + 8.87;
-
+ ls.max_acc = (MT_OK) ? 35.0 : 25.0;
  return ls;
 }
 
@@ -242,6 +243,8 @@ void displayState(const struct LanderState *lander_state, enum LandingPhase phas
 }
 
 enum LandingPhase determineLandingPhase(enum LandingPhase current_phase, const struct LanderState *lander_state) {
+ double landing_burn_target_acc = lander_state->max_acc * landing_burn_k;
+
  if (current_phase == LANDED || current_phase == LANDING_BURN && lander_state->vel_y >= landing_cutoff_v) {
   return LANDED;
  } if (current_phase == LANDING_BURN && (lander_state->landing_acc < landing_burn_target_acc / 2.0 || lander_state->vel_y >= landing_cutoff_v)) {
