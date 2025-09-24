@@ -164,6 +164,7 @@
 #include "Lander_Control.h"
 #include "Thruster_Control.h"
 #include "stdio.h"
+#include "Sensor_Fallback.h"
 
 // Constants
 double k = 5.5; // Constant adjustment factor to make physics work properly (determined by trial and error)
@@ -182,13 +183,16 @@ double stopAcc(double vel, double stop_dist) {
 
 struct LanderState calculateLanderState() {
  struct LanderState ls;
+ std::vector<int> exclusion_list;
+ SensorStatus sensor_status = {1, 1, 1, 1, 1};
+ SensorHistory sensor_history;
 
  ls.altitude = 1000 - Position_Y() - (1000 - PLAT_Y);
- ls.pos_x = Position_X();
- ls.pos_y = Position_Y();
- ls.vel_y = Velocity_Y();
- ls.vel_x = Velocity_X();
- ls.angle = fmod(Angle(), 360.0);
+ ls.pos_x = GetSensorValue(POSITION_X, exclusion_list, sensor_status, sensor_history).value;
+ ls.pos_y = GetSensorValue(POSITION_Y, exclusion_list, sensor_status, sensor_history).value;
+ ls.vel_y = GetSensorValue(VELOCITY_Y, exclusion_list, sensor_status, sensor_history).value;
+ ls.vel_x = GetSensorValue(VELOCITY_X, exclusion_list, sensor_status, sensor_history).value;
+ ls.angle = fmod(GetSensorValue(ANGLE, exclusion_list, sensor_status, sensor_history).value, 360.0);
 
  ls.landing_acc = stopAcc(ls.vel_y, (ls.altitude - landing_height_offset)) + G_ACCEL;
  ls.max_acc = (MT_OK) ? 35.0 : 25.0;
