@@ -55,6 +55,7 @@ CSRCS         =
 
 # Define all C++ source files here
 CPPSRCS       = Lander.cpp
+CPPSRCS		 += Thruster_Control.cpp
 
 ##############################################################################
 # Define additional rules that make should know about in order to compile our

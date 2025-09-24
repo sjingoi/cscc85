@@ -160,28 +160,10 @@
 */
 #include <math.h>
 
+#include "Lander.h"
 #include "Lander_Control.h"
+#include "Thruster_Control.h"
 #include "stdio.h"
-
-struct LanderState {
- // Physical properties of the craft
- double altitude; // Vertical distance from the ground
- double pos_x, pos_y;
- double vel_x, vel_y;
- double angle; // Current spacecraft angle in degrees
-
- // Calculated properies of the craft
- double max_acc; // Maximum acceleration based on available thrusters
- double landing_acc; // Vertical acceleration required to stop the craft at the ground based on the current falling rate
-};
-
-enum LandingPhase {
-  GAIN_ALTITUDE,
-  GO_ABOVE_LANDING_SITE,
-  FALLING,
-  LANDING_BURN,
-  LANDED
-};
 
 // Constants
 double k = 5.5; // Constant adjustment factor to make physics work properly (determined by trial and error)
@@ -213,51 +195,6 @@ struct LanderState calculateLanderState() {
  return ls;
 }
 
-void orientLander(double angle_rad, const struct LanderState *ls) {
-  double epsilon = 1;
-  double target_angle = fmod((angle_rad / (2.0 * PI)) * 360.0, 360.0); // Convert to degrees
-  double angle_delta = fmod((ls->angle - target_angle + 540.0), 360.0) - 180.0;
-
-  if (fabs(angle_delta) > epsilon) {
-    Rotate(-1 * angle_delta);
-  }
-}
-
-void thrustAngle(double angle_rad, double acceleration, const struct LanderState *ls) {
-  angle_rad += (MT_OK) ? 0 : (RT_OK) ? PI / 2.0 : PI / -2.0;
-  double epsilon = 2.0;
-  double target_angle = fmod((angle_rad / (2.0 * PI)) * 360.0, 360.0); // Convert to degrees
-  double angle_delta = fmod((ls->angle - target_angle + 540.0), 360.0) - 180.0;
-
-  if (fabs(angle_delta) > epsilon) {
-    Rotate(-1 * angle_delta);
-  }
-  
-  printf("Burning at acceleration %f\n", acceleration);
-  if (MT_OK) {
-    Main_Thruster(acceleration / 35.0);
-  } else if (RT_OK) {
-    Right_Thruster(acceleration / 25.0);
-  } else {
-    Left_Thruster(acceleration / 25.0); 
-  }
-}
-
-void thrustVector(double acc_x, double acc_y, const struct LanderState *ls) {
-  double angle = atan2(acc_y, acc_x);
-  double mag = sqrt(acc_y*acc_y + acc_x*acc_x);
-  thrustAngle(angle + PI / 2, mag, ls);
-}
-
-void displayState(const struct LanderState *lander_state, enum LandingPhase phase) {
- printf("===== Lander State ===============================\n");
- printf("PHASE:                        %d\n", phase);
- printf("Velocity X:                   %f\n", lander_state->vel_x);
- printf("Velocity Y:                   %f\n", lander_state->vel_y);
- printf("Altitude Gnd:                 %f\n", lander_state->altitude);
- printf("Landing Acc:                  %f\n", lander_state->landing_acc);
-}
-
 enum LandingPhase determineLandingPhase(enum LandingPhase current_phase, const struct LanderState *ls) {
  double landing_burn_target_acc = ls->max_acc * landing_burn_k;
  if (current_phase == GAIN_ALTITUDE) {
@@ -283,6 +220,15 @@ enum LandingPhase determineLandingPhase(enum LandingPhase current_phase, const s
  } else {
   return current_phase;
  }
+}
+
+void displayState(const struct LanderState *lander_state, enum LandingPhase phase) {
+ printf("===== Lander State ===============================\n");
+ printf("PHASE:                        %d\n", phase);
+ printf("Velocity X:                   %f\n", lander_state->vel_x);
+ printf("Velocity Y:                   %f\n", lander_state->vel_y);
+ printf("Altitude Gnd:                 %f\n", lander_state->altitude);
+ printf("Landing Acc:                  %f\n", lander_state->landing_acc);
 }
 
 void Lander_Control(void)
