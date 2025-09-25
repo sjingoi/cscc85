@@ -5,14 +5,14 @@ ______________________________________________________________________
 
 Team name:
 
-Name 1 (last, first):
-Student number 1:
+Name 1 (last, first): Jingoi, Sebastian
+Student number 1: 1009330733
 
-Name 2 (last, first):
-Student number 2:
+Name 2 (last, first): Liao, Leo
+Student number 2: 1009067885
 
-Name 3 (last, first):
-Student number 3:
+Name 3 (last, first): Velasquez, Isaiah
+Student number 3: 1009105825
 
 (special: Lose 5 marks for not completing the above information)
 _______________________________________________________________________
@@ -23,19 +23,23 @@ you think the task could be completed
 
 a) The program can land the craft safely in mode '1'
   
-   - for the 'easy.ppm' map (yes/no)
-   - for the 'hard.ppm' map (yes/no)
+   - for the 'easy.ppm' map (yes)
+   - for the 'hard.ppm' map (yes)
 
    If it fails, describe the conditions in which it fails and how
    you think this could be resolved
 
 b) The program can land the craft safely in mode '2'
   
-   - for the 'easy.ppm' map (yes/no)
-   - for the 'hard.ppm' map (yes/no)
+   - for the 'easy.ppm' map (no)
+   - for the 'hard.ppm' map (no)
 
    If it fails, describe the conditions in which it fails and how
    you think this could be resolved
+
+   Some of our sensors are not properly accounted for when it comes to sensor fallback, and
+   thus cause the overarching structure to fail. If we were to look into these sensor fallbacks
+   and fix them, then we could resolve this problem.
 
 _______________________________________________________________________
 
@@ -48,9 +52,35 @@ Questions:
    determine the state of the craft and ultimately control it 
    properly?
 
+   Noisy sensors caused multiple issues including instability with landing,
+   inability to create alternate readings due to noise accumulation, and innacurate
+   state estimation. 
+
+   Instability with landing: Noisy sensor readings caused oscillations and overshooting
+   early into the project, as some of our preliminary code responded too quickly to changes.
+
+   Inability to create alternate readings: When primary sensors failed, our secondary AND
+   tertiary readings were initially inaccurate since noise from other sensors would be combined
+   and thus amplified.
+
+   Inaccurate state estimation: Position and velocity noise made it hard to accurately determine
+   trajectory and proximity to the landing zone. This ultimately affected navigating precision and
+   landing timing.
+
 2) Describe the technique(s) you used to deal with sensor noise
 
+   We looked into the linear filtering and convolution method from lecture, applying the convolution
+   with 3 different filters being Gaussian, Triangular, and Uniform. These 3 would be used for Velocity,
+   Position, and Sonar respectively as they all have their own benefits. Gaussian's bell curve shape provides
+   smooth stable readings but is less responsive to sudden changes. Triangular shape allows for balance between
+   smoothing and responsiveness. Finally, Uniform shape filters out noise spikes.
+
 3) Describe your strategy for dealing with thruster failures
+
+   We decided to base our thruster logic off the usage of one thruster at a time, relying on rotational control, 
+   combined with whatever thrusters are still functional. When side thrusters fail, we rely on main thruster and 
+   when main thruster fails we rely on a side thruster. This structure allows for control over the lander even with
+   significant thruster failures.
 
 4) Describe your strategy for dealing with sensor malfunctions:
 
@@ -62,31 +92,87 @@ Questions:
    What if you have multiple failures? what could you do if, for
    example both position and velocity sensors became inoperative?
 
+   Our general strategy for dealing with sensor malfunctions is to have a total of 3 ways to get the reading. 
+   The first is the standard, read from sensor and denoise, the second is to use alternative working sensors 
+   if the primary one is non-functional, and the third is to use a combination of range finder + any other 
+   working sensors. Using These 3 readings, we can get alternate readings for any sensor that breaks,
+   including our position and velocity sensors being inoperational.
+
 5) What was the hardest failure type to deal with (i.e. which is
    the component, either sensor or control that makes the lander
    harder to handle?)?
+
+   Position sensor failure is what we had the most trouble with, as deriving the alternate readings using velocity
+   and using just range finder is very hard. Position is fundamental to navigation and landing precision, the craft 
+   struggles to determine its location relative to the landing site without it. Integrating velocity to estimate 
+   position accumulates errors over time, while using range finder with angle requires calculations that are sensitive 
+   to angle sensor noise. Additionally, position sensor failure affects velocity derivation when velocity sensors also 
+   fail, creating a compounding problem that makes the craft harder to control reliably.
 
 6) Assume a human pilot was in charge of controlling the craft 
    (i.e. the pilot has control of thrusters and rotation).
    How would you change Safety_Override() so that it prevents
    the pilot from accidentally crashing the lander?
+
+   We would modify Safety_Override() to implement a multi-layered safety system that monitors critical parameters and 
+   intervenes when needed. The system would continuously check horizontal position, velocity, and obstacle proximity using our 
+   denoised sensor readings. If the craft descends too rapidly (vertical velocity exceeding safe thresholds) or approaches 
+   the ground at dangerous speeds, the override would automatically engage main thrusters to reduce descent rate regardless 
+   of pilot input. For obstacle avoidance, the system would monitor sonar readings and temporarily take control to steer away 
+   from detected hazards, then return control once clear. Additionally, we would implement velocity limiting that prevents 
+   the pilot from exceeding safe speed limits in any direction, and landing zone protection that prevents commands directing 
+   the craft toward unsafe terrain. In extreme cases where pilot actions consistently threaten the craft, the system 
+   could engage full autopilot mode to execute an emergency landing sequence, prioritizing crew survival, using the same 
+   sensor fusion techniques we developed for normal operation.
    
 7) Do you think it is reasonable to write such a control function?
    (i.e. a routine that takes control from a human for their
     own safety)
 
+    Yes, we think that it is reasonable to write such a control function for a craft like this as human error can be
+    devastating for the mission. Compared to vehicles like cars where drivers can recover from their mistakes, any
+    mistakes made on a lander liek this in space result in loss of the craft or loss of the entire onboard crew. On 
+    top of this, leaving the complexity of managing various onboard controls and readings to a human pilot is just
+    very risky, and therefore the usage of an override feature would be beneficial. It is good to not completely take
+    away control from the human pilot during safety override though, as the crew should still be able to prevent fatal
+    errors possibly made by the function.
+
 8) Should the pilot be aware that this software is present?
    (yes or no, and tell me why you think so!)
+
+   Yes, we think it is important that the human pilot is aware that there is such software on the craft. This software
+   is important as it potentially stops many human errors from completely failing the mission, but it is equally important
+   that all crew knows it exists. This way, the pilot knows that there is something that will commence in such scenarios, and
+   therefore will not be surprised by it. Additionally, pilot awareness enables proper training on when and how the system
+   intervenes, allowing them to work cooperatively with the safety override rather than fighting against it.
 
 9) Would you buy/drive a car that you know has control software
    that will take control from you if it estimates you are
    doing something dangerous?
 
+   We think it depends on how often and in what scenarios does the software take over. If the system only intervenes in genuinely 
+   life-threatening situations (like preventing collisions or loss of control), then yes, we would be comfortable with it 
+   since the consequences of accidents are severe. However, if the software frequently overrides normal driving decisions or has 
+   a high rate of false positives, it could become frustrating and potentially dangerous if drivers become overly reliant on it. 
+   The key difference from the lander scenario is that car driving involves many subjective decisions and varying road conditions 
+   where human judgment is often superior to automated systems. We would want the car's safety override to be limited to clear 
+   emergency situations with well-defined parameters, similar to existing features like automatic emergency braking, rather than 
+   general driving assistance that could interfere with normal operation.
+   
 10) Can you as an embedded systems designer think of every 
     possible scenario that could go wrong so as to write 
     control software that ALWAYS works?
 
     Think about that...
+
+    No, it is impossible for us to anticipate EVERY possible scenario that could go wrong. Even with comprehensive sensor fallback
+    system and thruster failure handling, there are just infinite edge cases and combinations that we haven't considered. the complexity 
+    of interactions between multiple simultaneous failures grows exponentially, making it impossible to test every combination. 
+    Real-world systems must be designed with graceful degradation in mind, accepting that perfect reliability is unachievable. Instead, 
+    we focus on robust design principles: redundancy, fail-safe defaults, comprehensive testing of likely scenarios, and emergency protocols 
+    that prioritize the most critical objectives (like preventing catastrophic failure) when facing unknown situations. The goal isn't 
+    perfection, but rather building systems resilient enough to handle the vast majority of realistic failure modes while maintaining basic 
+    safety even in unprecedented circumstances.
 ________________________________________________________________
 
 Grading:
