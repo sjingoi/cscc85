@@ -57,7 +57,7 @@ SensorValue GetVelocityX(std::vector<int> exclusion_list, SensorStatus sensor_st
     exclusion_list.push_back(VELOCITY_X);
     SensorValue position_x_sensor_value = GetSensorValue(POSITION_X, exclusion_list, sensor_status, sensor_history);
     if (position_x_sensor_value.mode != 2) {
-        sensor_value.value = (sensor_history->position_x_hist[sensor_history->current_index] - sensor_history->position_x_hist[(sensor_history->current_index + 1) % READINGS]) / 5;
+        sensor_value.value = (sensor_history->position_x_hist[sensor_history->current_index] - sensor_history->position_x_hist[(sensor_history->current_index + 1) % READINGS]) / (READINGS/40);
         sensor_value.mode = 1;
         return sensor_value;
     }
@@ -77,7 +77,7 @@ SensorValue GetVelocityY(std::vector<int> exclusion_list, SensorStatus sensor_st
     exclusion_list.push_back(VELOCITY_Y);
     SensorValue position_y_sensor_value = GetSensorValue(POSITION_Y, exclusion_list, sensor_status, sensor_history);
     if (position_y_sensor_value.mode != 2) {
-        sensor_value.value = (sensor_history->position_y_hist[sensor_history->current_index] - sensor_history->position_y_hist[(sensor_history->current_index + 1) % READINGS]) / 4;
+        sensor_value.value = (sensor_history->position_y_hist[sensor_history->current_index] - sensor_history->position_y_hist[(sensor_history->current_index + 1) % READINGS]) / (READINGS/50);
         sensor_value.value *= -1;
         sensor_value.mode = 1;
         return sensor_value;
