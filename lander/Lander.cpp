@@ -159,12 +159,17 @@
   Standard C libraries
 */
 #include <math.h>
+#include <vector>
 
 #include "Lander.h"
 #include "Lander_Control.h"
 #include "Thruster_Control.h"
 #include "stdio.h"
 #include "Sensor_Fallback.h"
+#include "Denoising.h"
+#include "Sensor_History.h"
+#include "Sensor_History.h"
+#include "Sensor_Status.h"
 
 // Constants
 double k = 5.5; // Constant adjustment factor to make physics work properly (determined by trial and error)
@@ -185,7 +190,7 @@ struct LanderState calculateLanderState() {
  struct LanderState ls;
  std::vector<int> exclusion_list;
  SensorStatus sensor_status = {1, 1, 1, 1, 1};
- SensorHistory sensor_history;
+ // Using global sensor_history variable
 
  ls.altitude = 1000 - Position_Y() - (1000 - PLAT_Y);
  ls.pos_x = GetSensorValue(POSITION_X, exclusion_list, sensor_status, sensor_history).value;
@@ -227,12 +232,12 @@ enum LandingPhase determineLandingPhase(enum LandingPhase current_phase, const s
 }
 
 void displayState(const struct LanderState *lander_state, enum LandingPhase phase) {
- printf("===== Lander State ===============================\n");
- printf("PHASE:                        %d\n", phase);
- printf("Velocity X:                   %f\n", lander_state->vel_x);
- printf("Velocity Y:                   %f\n", lander_state->vel_y);
- printf("Altitude Gnd:                 %f\n", lander_state->altitude);
- printf("Landing Acc:                  %f\n", lander_state->landing_acc);
+//  printf("===== Lander State ===============================\n");
+//  printf("PHASE:                        %d\n", phase);
+//  printf("Velocity X:                   %f\n", lander_state->vel_x);
+//  printf("Velocity Y:                   %f\n", lander_state->vel_y);
+//  printf("Altitude Gnd:                 %f\n", lander_state->altitude);
+//  printf("Landing Acc:                  %f\n", lander_state->landing_acc);
 }
 
 void Lander_Control(void)
@@ -286,7 +291,6 @@ void Lander_Control(void)
         ACCESS THE SIMULATION STATE. That's cheating,
         I'll give you zero.
 **************************************************/
- 
  ls = calculateLanderState();
  landing_phase = determineLandingPhase(landing_phase, &ls);
  displayState(&ls, landing_phase);

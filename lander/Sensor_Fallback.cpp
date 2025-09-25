@@ -46,7 +46,7 @@ SensorValue GetSensorValue(SensorMapping sensor, std::vector<int> exclusion_list
 
 SensorValue GetVelocityX(std::vector<int> exclusion_list, SensorStatus sensor_status, SensorHistory sensor_history) {
     SensorValue sensor_value;
-    if (sensor_status.velocity_x_ok) {
+    if (sensor_status.velocity_x_ok && !SensorInExclusionList(VELOCITY_X, exclusion_list)) {
         sensor_value.value = Velocity_X();
         sensor_value.mode = 0;
         return sensor_value;
@@ -65,7 +65,7 @@ SensorValue GetVelocityX(std::vector<int> exclusion_list, SensorStatus sensor_st
 
 SensorValue GetVelocityY(std::vector<int> exclusion_list, SensorStatus sensor_status, SensorHistory sensor_history) {
     SensorValue sensor_value;
-    if (sensor_status.velocity_y_ok) {
+    if (sensor_status.velocity_y_ok && !SensorInExclusionList(VELOCITY_Y, exclusion_list)) {
         sensor_value.value = Velocity_Y();
         sensor_value.mode = 0;
         return sensor_value;
@@ -84,7 +84,7 @@ SensorValue GetVelocityY(std::vector<int> exclusion_list, SensorStatus sensor_st
 
 SensorValue GetPositionX(std::vector<int> exclusion_list, SensorStatus sensor_status, SensorHistory sensor_history) {
     SensorValue sensor_value;
-    if (sensor_status.position_x_ok) {
+    if (sensor_status.position_x_ok && !SensorInExclusionList(POSITION_X, exclusion_list)) {
         sensor_value.value = Position_X();
         sensor_value.mode = 0;
         return sensor_value;
@@ -103,7 +103,7 @@ SensorValue GetPositionX(std::vector<int> exclusion_list, SensorStatus sensor_st
 
 SensorValue GetPositionY(std::vector<int> exclusion_list, SensorStatus sensor_status, SensorHistory sensor_history) {
     SensorValue sensor_value;
-    if (sensor_status.position_y_ok) {
+    if (sensor_status.position_y_ok && !SensorInExclusionList(POSITION_Y, exclusion_list)) {
         sensor_value.value = Position_Y();
         sensor_value.mode = 0;
         return sensor_value;
@@ -135,7 +135,7 @@ SensorValue GetAngle(std::vector<int> exclusion_list, SensorStatus sensor_status
 
 SensorValue GetSonar(std::vector<int> exclusion_list, SensorStatus sensor_status, SensorHistory sensor_history) {
     SensorValue sensor_value;
-    if (sensor_status.sonar_ok) {
+    if (sensor_status.sonar_ok && !SensorInExclusionList(SONAR, exclusion_list)) {
         sensor_value.value = 0;
         sensor_value.mode = 0;
         return sensor_value;
