@@ -31,15 +31,15 @@ a) The program can land the craft safely in mode '1'
 
 b) The program can land the craft safely in mode '2'
   
-   - for the 'easy.ppm' map (no)
-   - for the 'hard.ppm' map (no)
+   - for the 'easy.ppm' map (yes)
+   - for the 'hard.ppm' map (yes)
 
    If it fails, describe the conditions in which it fails and how
    you think this could be resolved
 
-   Some of our sensors are not properly accounted for when it comes to sensor fallback, and
-   thus cause the overarching structure to fail. If we were to look into these sensor fallbacks
-   and fix them, then we could resolve this problem.
+   Our position sensors are not properly accounted for when it comes to sensor fallback, and
+   thus cause the overarching structure to fail only in specific scenarios. If we were to look
+   into these sensor fallbacks and fix them, then we could resolve this problem. 
 
 _______________________________________________________________________
 
