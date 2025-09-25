@@ -126,13 +126,14 @@ SensorValue GetPositionY(std::vector<int> exclusion_list, SensorStatus sensor_st
 
 SensorValue GetAngle(std::vector<int> exclusion_list, SensorStatus sensor_status, const SensorHistory *sensor_history) {
     SensorValue sensor_value;
-    if (sensor_status.angle_ok && !SensorInExclusionList(ANGLE, exclusion_list)) {
-        sensor_value.value = Angle();
-        sensor_value.mode = 0;
-        return sensor_value;
-    }
 
-    // TODO: Probably derive the angle via thrust and velocity components
+    double sum = 0;
+    for (int i = 0; i < 1000; i++) {
+        sum += (Angle() + 360.0);
+    }
+    sensor_value.value = sum / 1000.0;
+    sensor_value.mode = 0;
+
     return sensor_value;
 }
 
