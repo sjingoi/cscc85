@@ -166,6 +166,8 @@
 #include "Thruster_Control.h"
 #include "stdio.h"
 #include "Sensor_Fallback.h"
+#include "Denoising.h"
+#include "Sensor_History.h"
 #include "Sensor_History.h"
 #include "Sensor_Status.h"
 
