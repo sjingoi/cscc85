@@ -159,6 +159,7 @@
   Standard C libraries
 */
 #include <math.h>
+#include <vector>
 
 #include "Lander.h"
 #include "Lander_Control.h"
@@ -187,7 +188,7 @@ struct LanderState calculateLanderState() {
  struct LanderState ls;
  std::vector<int> exclusion_list;
  SensorStatus sensor_status = {1, 1, 1, 1, 1};
- sensor_history;
+ // Using global sensor_history variable
 
  ls.altitude = 1000 - Position_Y() - (1000 - PLAT_Y);
  ls.pos_x = GetSensorValue(POSITION_X, exclusion_list, sensor_status, sensor_history).value;

@@ -19,6 +19,11 @@ void UpdateSensorHistory(SensorStatus sensor_status) {
     if (call_count % 10 == 0) {
         printf("DEBUG: call %d, old_idx=%d, new_idx=%d, count=%d, READINGS=%d\n", 
                call_count, old_index, sensor_history.current_index, sensor_history.count, READINGS);
+        printf("       velocity_x_hist: ");
+        for (int i = 0; i < READINGS; i++) {
+            printf("%f ", sensor_history.velocity_x_hist[i]);
+        }
+        printf("\n");
     }
     
     if (sensor_history.count < READINGS) {
