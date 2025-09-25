@@ -1,11 +1,13 @@
 #include "Sensor_History.h"
 #include "Lander_Control.h"
+#include "Sensor_Fallback.h"
 #include "stdio.h"
+#include <vector>
 
 // Global instance definition (actual memory allocation)
 SensorHistory sensor_history = {0, 0, {0}, {0}, {0}, {0}, {0}, {0}, {{0}}}; // global instance
 
-void UpdateSensorHistory() {
+void UpdateSensorHistory(SensorStatus sensor_status) {
     static int call_count = 0;
     call_count++;
 
@@ -23,13 +25,20 @@ void UpdateSensorHistory() {
         sensor_history.count++;
     }
 
+    // Create empty exclusion list for robust sensor reading
+    std::vector<int> exclusion_list;
+    
     int idx_hist = sensor_history.current_index;
-    sensor_history.velocity_x_hist[idx_hist] = Velocity_X();
-    sensor_history.velocity_y_hist[idx_hist] = Velocity_Y();
-    sensor_history.position_x_hist[idx_hist] = Position_X();
-    sensor_history.position_y_hist[idx_hist] = Position_Y();
-    sensor_history.angle_hist[idx_hist] = Angle();
-    sensor_history.range_dist_hist[idx_hist] = RangeDist();
+    sensor_history.velocity_x_hist[idx_hist] = GetSensorValue(VELOCITY_X, exclusion_list, sensor_status, sensor_history).value;
+    sensor_history.velocity_y_hist[idx_hist] = GetSensorValue(VELOCITY_Y, exclusion_list, sensor_status, sensor_history).value;
+    sensor_history.position_x_hist[idx_hist] = GetSensorValue(POSITION_X, exclusion_list, sensor_status, sensor_history).value;
+    sensor_history.position_y_hist[idx_hist] = GetSensorValue(POSITION_Y, exclusion_list, sensor_status, sensor_history).value;
+    sensor_history.angle_hist[idx_hist] = GetSensorValue(ANGLE, exclusion_list, sensor_status, sensor_history).value;
+    sensor_history.range_dist_hist[idx_hist] = GetSensorValue(RANGEDIST, exclusion_list, sensor_status, sensor_history).value;
+    
+    // For sonar, we still use direct access since GetSensorValue(SONAR, ...) doesn't handle individual indices
+    // Future enhancement: implement GetSensorValue for individual sonar indices
+    // For now, this provides the raw sonar data that can be validated by sensor status functions
     for (int i = 0; i < 36; i++) {
         sensor_history.sonar_hist[idx_hist][i] = SONAR_DIST[i];
     }

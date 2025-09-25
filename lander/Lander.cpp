@@ -165,6 +165,7 @@
 #include "Thruster_Control.h"
 #include "stdio.h"
 #include "Sensor_Fallback.h"
+#include "Sensor_History.h"
 #include "Sensor_Status.h"
 
 // Constants
@@ -177,8 +178,6 @@ double landing_height_offset = 30.0; // Height at which the lander will come to 
 // Gobally declared state variables
 struct LanderState ls;
 enum LandingPhase landing_phase = GAIN_ALTITUDE;
-SensorStatus sensor_status = {1, 1, 1, 1, 1, 1}; // start with all functional
-SensorHistory sensor_history = {0, 0, {0}, {0}, {0}, {0}, {0}, {0}, {{0}}}; 
 
 double stopAcc(double vel, double stop_dist) {
   return k * vel * vel / (2 * stop_dist);
@@ -187,7 +186,8 @@ double stopAcc(double vel, double stop_dist) {
 struct LanderState calculateLanderState() {
  struct LanderState ls;
  std::vector<int> exclusion_list;
- SensorHistory sensor_history;
+ SensorStatus sensor_status = {1, 1, 1, 1, 1};
+ sensor_history;
 
  ls.altitude = 1000 - Position_Y() - (1000 - PLAT_Y);
  ls.pos_x = GetSensorValue(POSITION_X, exclusion_list, sensor_status, sensor_history).value;
@@ -229,12 +229,12 @@ enum LandingPhase determineLandingPhase(enum LandingPhase current_phase, const s
 }
 
 void displayState(const struct LanderState *lander_state, enum LandingPhase phase) {
- printf("===== Lander State ===============================\n");
- printf("PHASE:                        %d\n", phase);
- printf("Velocity X:                   %f\n", lander_state->vel_x);
- printf("Velocity Y:                   %f\n", lander_state->vel_y);
- printf("Altitude Gnd:                 %f\n", lander_state->altitude);
- printf("Landing Acc:                  %f\n", lander_state->landing_acc);
+//  printf("===== Lander State ===============================\n");
+//  printf("PHASE:                        %d\n", phase);
+//  printf("Velocity X:                   %f\n", lander_state->vel_x);
+//  printf("Velocity Y:                   %f\n", lander_state->vel_y);
+//  printf("Altitude Gnd:                 %f\n", lander_state->altitude);
+//  printf("Landing Acc:                  %f\n", lander_state->landing_acc);
 }
 
 void Lander_Control(void)
