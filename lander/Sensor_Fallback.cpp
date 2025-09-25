@@ -47,20 +47,20 @@ SensorValue GetSensorValue(SensorMapping sensor, std::vector<int> exclusion_list
 
 SensorValue GetVelocityX(std::vector<int> exclusion_list, SensorStatus sensor_status, SensorHistory sensor_history) {
     SensorValue sensor_value;
-    // if (sensor_status.velocity_x_ok) {
-    //     sensor_value.value = sensor_history.velocity_x_hist[sensor_history.current_index];;
-    //     sensor_value.mode = 0;
-    //     return sensor_value;
-    // }
+    if (sensor_status.velocity_x_ok) {
+        sensor_value.value = sensor_history.velocity_x_hist[sensor_history.current_index];;
+        sensor_value.mode = 0;
+        return sensor_value;
+    }
 
     // Position X still functioning AND not excluded AND position_x is derivable
     exclusion_list.push_back(VELOCITY_X);
-    // SensorValue position_x_sensor_value = GetSensorValue(POSITION_X, exclusion_list, sensor_status, sensor_history);
-    // if (position_x_sensor_value.mode != 2) {
-    //     // TODO: implement velocity x derivation
-    //     return position_x_sensor_value;
-    // }
-    sensor_value.value = (sensor_history.position_x_hist[sensor_history.current_index] - sensor_history.position_x_hist[(sensor_history.current_index + 1) % READINGS]) / READINGS;
+    SensorValue position_x_sensor_value = GetSensorValue(POSITION_X, exclusion_list, sensor_status, sensor_history);
+    if (position_x_sensor_value.mode != 2) {
+        sensor_value.value = (sensor_history.position_x_hist[sensor_history.current_index] - sensor_history.position_x_hist[(sensor_history.current_index + 1) % READINGS]) / 5;
+        sensor_value.mode = 1;
+        return sensor_value;
+    }
 
     return sensor_value;
 }
@@ -77,10 +77,12 @@ SensorValue GetVelocityY(std::vector<int> exclusion_list, SensorStatus sensor_st
     exclusion_list.push_back(VELOCITY_Y);
     SensorValue position_y_sensor_value = GetSensorValue(POSITION_Y, exclusion_list, sensor_status, sensor_history);
     if (position_y_sensor_value.mode != 2) {
-        // TODO: implement velocity y derivation
-        return position_y_sensor_value;
+        sensor_value.value = (sensor_history.position_y_hist[sensor_history.current_index] - sensor_history.position_y_hist[(sensor_history.current_index + 1) % READINGS]) / 4;
+        sensor_value.value *= -1;
+        sensor_value.mode = 1;
+        return sensor_value;
     }
-
+    
     return sensor_value;
 }
 

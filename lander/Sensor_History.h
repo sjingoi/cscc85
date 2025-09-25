@@ -1,6 +1,6 @@
 #pragma once
 
-#define READINGS 50
+#define READINGS 200
 // structure for sensor history
 typedef struct {
     int current_index;

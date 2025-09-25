@@ -170,7 +170,7 @@
 double k = 5.5; // Constant adjustment factor to make physics work properly (determined by trial and error)
 double target_start_y = 70.0; // The y value that the craft wants to attain before attempting to land
 double landing_cutoff_v = -5.0; // Minimum vertical velocity (signed) needed to end the landing burn;
-double landing_burn_k = 1.0; // Ideal acceleration to do the landing burn at as a multiple of max_acc
+double landing_burn_k = 0.6; // Ideal acceleration to do the landing burn at as a multiple of max_acc
 double landing_height_offset = 30.0; // Height at which the lander will come to a stop above the landing pad
 
 // Gobally declared state variables
@@ -217,9 +217,17 @@ enum LandingPhase determineLandingPhase(enum LandingPhase current_phase, const s
   } else {
     return GO_ABOVE_LANDING_SITE;
   }
- } else if (current_phase == LANDED || ((current_phase == LANDING_BURN) && ls->vel_y >= landing_cutoff_v)) {
+ } else if (current_phase == LANDED) {
   return LANDED;
- } else if (ls->landing_acc >= landing_burn_target_acc) {
+ } else if (current_phase == LANDING_BURN) {
+  if (ls->altitude <= landing_height_offset) {
+    return LANDED;
+  } else if (ls->vel_y >= landing_cutoff_v) {
+    return FALLING;
+  } else {
+    return LANDING_BURN;
+  }
+ } else if (ls->landing_acc >= landing_burn_target_acc && ls->vel_y < landing_cutoff_v) {
   return LANDING_BURN;
  } else {
   return current_phase;
@@ -299,16 +307,22 @@ void Lander_Control(void)
  double max_vy = fmin(20, 0.1 * fabs(ls.pos_y - target_start_y));
   target_vx = fmax(fmin(target_vx, max_vx), -max_vx);
   target_vy = fmax(fmin(target_vy, max_vy), -max_vy);
+  if (landing_phase == GAIN_ALTITUDE) {
+    target_vx = 0;
+  }
  double target_ax = -1 * (ls.vel_x - target_vx);
  double target_ay = -1 * (-1 * ls.vel_y - target_vy) - (G_ACCEL);
+
+
+ 
  if (landing_phase == GAIN_ALTITUDE) {
-  double c = 10;
-  thrustVector(-1 * c * ls.vel_x, target_ay, &ls);
+  printf("AX: %f\n", target_ax);
+  thrustVector(target_ax, target_ay, &ls);
  } else if (landing_phase == GO_ABOVE_LANDING_SITE) {
   thrustVector(target_ax, target_ay, &ls);
  } else if (landing_phase == FALLING) {
   printf("%f \n", target_ax);
-  thrustVector(target_ax, 0.1, &ls);
+  thrustVector(target_ax, -1, &ls);
  } else if (landing_phase == LANDING_BURN) {
   if (ls.altitude < 50.0) {
     thrustVector(0, -1 * ls.landing_acc, &ls);
@@ -317,6 +331,7 @@ void Lander_Control(void)
   }
  } else {
   // Turn off engine and do nothing else
+  orientLander(0, &ls);
   Main_Thruster(0);
   Left_Thruster(0);
   Right_Thruster(0);
