@@ -1,4 +1,5 @@
 #include "Lander.h"
+#include "Sensor_History.h"
 
 // convolution-based denoising functions
 double ConvolutionFilter(double new_value, double* kernel, int kernel_size, int sensor_id);
