@@ -99,7 +99,7 @@ SensorValue GetPositionX(std::vector<int> exclusion_list, SensorStatus sensor_st
     SensorValue velocity_x_sensor_value = GetSensorValue(VELOCITY_X, exclusion_list, sensor_status, sensor_history);
     if (velocity_x_sensor_value.mode != 2) {
         // Calculate current position using past position and current velocity
-        double past_position_x = sensor_history->position_x_hist[(sensor_history->current_index + 1) % READINGS];
+        double past_position_x = sensor_history->position_x_hist[(sensor_history->current_index + 1 + READINGS) % READINGS];
         double current_velocity_x = velocity_x_sensor_value.value;
         double time_step = READINGS / 40.0;
         
@@ -124,7 +124,7 @@ SensorValue GetPositionY(std::vector<int> exclusion_list, SensorStatus sensor_st
     SensorValue velocity_y_sensor_value = GetSensorValue(VELOCITY_Y, exclusion_list, sensor_status, sensor_history);
     if (velocity_y_sensor_value.mode != 2) {
         // Calculate current position using past position and current velocity
-        double past_position_y = sensor_history->position_y_hist[(sensor_history->current_index + 1) % READINGS];
+        double past_position_y = sensor_history->position_y_hist[(sensor_history->current_index + 1 + READINGS) % READINGS];
         double current_velocity_y = velocity_y_sensor_value.value;
         double time_step = READINGS / 50.0; // Same time step used in velocity calculation
         
