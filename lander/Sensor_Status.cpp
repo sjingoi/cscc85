@@ -40,12 +40,12 @@ void UpdateSensorStatus(SensorStatus *sensor_status, SensorHistory *sensor_histo
         }
         
         // check position X sensor
-        if (fabs(curr_position_x - prev_position_x) > 100.0) {
+        if (fabs(curr_position_x - prev_position_x) > 100.0 || curr_position_x < -1) {
             sensor_status->position_x_ok = 0;
         }
         
         // check position Y sensor
-        if (fabs(curr_position_y - prev_position_y) > 100.0) {
+        if (fabs(curr_position_y - prev_position_y) > 100.0 || curr_position_y < -1) {
             sensor_status->position_y_ok = 0;
         }
         
@@ -112,41 +112,41 @@ void UpdateSensorStatus(SensorStatus *sensor_status, SensorHistory *sensor_histo
     prev_angle = curr_angle;
 }
 
-// // Function to print current sensor status
-// void PrintSensorStatus() {
-//     static int last_velocity_x_ok = -1;
-//     static int last_velocity_y_ok = -1;
-//     static int last_position_x_ok = -1;
-//     static int last_position_y_ok = -1;
-//     static int last_angle_ok = -1;
-//     static int last_sonar_ok = -1;
-//     static int print_counter = 0;
+// Function to print current sensor status
+void PrintSensorStatus(SensorStatus sensor_status) {
+    static int last_velocity_x_ok = -1;
+    static int last_velocity_y_ok = -1;
+    static int last_position_x_ok = -1;
+    static int last_position_y_ok = -1;
+    static int last_angle_ok = -1;
+    static int last_sonar_ok = -1;
+    static int print_counter = 0;
     
-//     print_counter++;
+    print_counter++;
     
-//     // Print status every 50 calls or when status changes
-//     if (print_counter % 50 == 0 ||
-//         sensor_status.velocity_x_ok != last_velocity_x_ok ||
-//         sensor_status.velocity_y_ok != last_velocity_y_ok ||
-//         sensor_status.position_x_ok != last_position_x_ok ||
-//         sensor_status.position_y_ok != last_position_y_ok ||
-//         sensor_status.angle_ok != last_angle_ok ||
-//         sensor_status.sonar_ok != last_sonar_ok) {
+    // Print status every 50 calls or when status changes
+    if (print_counter % 50 == 0 ||
+        sensor_status.velocity_x_ok != last_velocity_x_ok ||
+        sensor_status.velocity_y_ok != last_velocity_y_ok ||
+        sensor_status.position_x_ok != last_position_x_ok ||
+        sensor_status.position_y_ok != last_position_y_ok ||
+        sensor_status.angle_ok != last_angle_ok ||
+        sensor_status.sonar_ok != last_sonar_ok) {
         
-//         printf("=== SENSOR STATUS ===\n");
-//         printf("Velocity X: %s\n", sensor_status.velocity_x_ok ? "OK" : "FAILED");
-//         printf("Velocity Y: %s\n", sensor_status.velocity_y_ok ? "OK" : "FAILED");
-//         printf("Position X: %s\n", sensor_status.position_x_ok ? "OK" : "FAILED");
-//         printf("Position Y: %s\n", sensor_status.position_y_ok ? "OK" : "FAILED");
-//         printf("Angle:      %s\n", sensor_status.angle_ok ? "OK" : "FAILED");
-//         printf("Sonar:      %s\n", sensor_status.sonar_ok ? "OK" : "FAILED");
-//         printf("====================\n");
+        printf("=== SENSOR STATUS ===\n");
+        printf("Velocity X: %s\n", sensor_status.velocity_x_ok ? "OK" : "FAILED");
+        printf("Velocity Y: %s\n", sensor_status.velocity_y_ok ? "OK" : "FAILED");
+        printf("Position X: %s\n", sensor_status.position_x_ok ? "OK" : "FAILED");
+        printf("Position Y: %s\n", sensor_status.position_y_ok ? "OK" : "FAILED");
+        printf("Angle:      %s\n", sensor_status.angle_ok ? "OK" : "FAILED");
+        printf("Sonar:      %s\n", sensor_status.sonar_ok ? "OK" : "FAILED");
+        printf("====================\n");
         
-//         last_velocity_x_ok = sensor_status.velocity_x_ok;
-//         last_velocity_y_ok = sensor_status.velocity_y_ok;
-//         last_position_x_ok = sensor_status.position_x_ok;
-//         last_position_y_ok = sensor_status.position_y_ok;
-//         last_angle_ok = sensor_status.angle_ok;
-//         last_sonar_ok = sensor_status.sonar_ok;
-//     }
-// }
+        last_velocity_x_ok = sensor_status.velocity_x_ok;
+        last_velocity_y_ok = sensor_status.velocity_y_ok;
+        last_position_x_ok = sensor_status.position_x_ok;
+        last_position_y_ok = sensor_status.position_y_ok;
+        last_angle_ok = sensor_status.angle_ok;
+        last_sonar_ok = sensor_status.sonar_ok;
+    }
+}
