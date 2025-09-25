@@ -37,9 +37,10 @@ b) The program can land the craft safely in mode '2'
    If it fails, describe the conditions in which it fails and how
    you think this could be resolved
 
-   Our position sensors are not properly accounted for when it comes to sensor fallback, and
-   thus cause the overarching structure to fail only in specific scenarios. If we were to look
-   into these sensor fallbacks and fix them, then we could resolve this problem. 
+   It will fail if the horizontal position sensor fails. We could resolve this by using the known
+   height of the landing pad with the range finder to determine when the craft is above the pad, wait for
+   velocity to be zero, and do a landing. Alternatively, we could also use the sonar in the hard map by
+   taking advantage of the shape of the cave to guide the craft towards the pad.
 
 _______________________________________________________________________
 
@@ -80,7 +81,7 @@ Questions:
    We decided to base our thruster logic off the usage of one thruster at a time, relying on rotational control, 
    combined with whatever thrusters are still functional. When side thrusters fail, we rely on main thruster and 
    when main thruster fails we rely on a side thruster. This structure allows for control over the lander even with
-   significant thruster failures.
+   significant thruster failures. Any thruster is stronger than gravity, so any can be used to land.
 
 4) Describe your strategy for dealing with sensor malfunctions:
 
@@ -145,6 +146,9 @@ Questions:
    that all crew knows it exists. This way, the pilot knows that there is something that will commence in such scenarios, and
    therefore will not be surprised by it. Additionally, pilot awareness enables proper training on when and how the system
    intervenes, allowing them to work cooperatively with the safety override rather than fighting against it.
+
+   The 737 Max discussed in lecture 1 is a good example of the concequences when pilots are not away of these software
+   overrides.
 
 9) Would you buy/drive a car that you know has control software
    that will take control from you if it estimates you are
