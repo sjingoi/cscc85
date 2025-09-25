@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Lander.h"
+
 #define READINGS 200
 // structure for sensor history
 typedef struct {
@@ -17,7 +19,7 @@ typedef struct {
 
 extern SensorHistory sensor_history;
 
-void UpdateSensorHistory();
+void UpdateSensorHistory(SensorStatus sensor_status, SensorHistory *sensor_history);
 double GetHistoricalVelocityX(int steps_back);
 double GetHistoricalVelocityY(int steps_back);
 double GetHistoricalPositionX(int steps_back);
