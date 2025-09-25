@@ -176,7 +176,7 @@ double k = 5.5; // Constant adjustment factor to make physics work properly (det
 double target_start_y = 70.0; // The y value that the craft wants to attain before attempting to land
 double landing_cutoff_v = -5.0; // Minimum vertical velocity (signed) needed to end the landing burn;
 double landing_burn_k = 0.6; // Ideal acceleration to do the landing burn at as a multiple of max_acc
-double landing_height_offset = 30.0; // Height at which the lander will come to a stop above the landing pad
+double landing_height_offset = 20.0; // Height at which the lander will come to a stop above the landing pad
 
 // Gobally declared state variables
 struct LanderState ls;
@@ -188,16 +188,23 @@ double stopAcc(double vel, double stop_dist) {
   return k * vel * vel / (2 * stop_dist);
 }
 
-struct LanderState calculateLanderState(SensorHistory *sensor_history) {
+struct LanderState calculateLanderState(SensorHistory *sensor_history, enum LandingPhase current_phase) {
  struct LanderState ls;
  std::vector<int> exclusion_list;
 
+ SensorValue y = GetSensorValue(POSITION_Y, exclusion_list, sensor_status, sensor_history);
+
  ls.altitude = 1000 - Position_Y() - (1000 - PLAT_Y);
  ls.pos_x = GetSensorValue(POSITION_X, exclusion_list, sensor_status, sensor_history).value;
- ls.pos_y = GetSensorValue(POSITION_Y, exclusion_list, sensor_status, sensor_history).value;
+ ls.pos_y = y.value;
  ls.vel_y = GetSensorValue(VELOCITY_Y, exclusion_list, sensor_status, sensor_history).value;
  ls.vel_x = GetSensorValue(VELOCITY_X, exclusion_list, sensor_status, sensor_history).value;
  ls.angle = fmod(GetSensorValue(ANGLE, exclusion_list, sensor_status, sensor_history).value, 360.0);
+
+ if (MT_OK && (current_phase == LANDING_BURN || current_phase == FALLING) && (ls.angle < 2.0 || ls.angle > 358.0 || y.mode == 1)) {
+   ls.altitude = RangeDist();
+   last_range_alt = RangeDist();
+ }
 
  ls.landing_acc = stopAcc(ls.vel_y, (ls.altitude - landing_height_offset)) + G_ACCEL;
  ls.max_acc = (MT_OK) ? 35.0 : 25.0;
@@ -306,18 +313,9 @@ void Lander_Control(void)
  UpdateSensorHistory(sensor_status, &sensor_history);
  UpdateSensorStatus(&sensor_status, &sensor_history, SONAR_DIST);
  
- ls = calculateLanderState(&sensor_history);
+ ls = calculateLanderState(&sensor_history, landing_phase);
  landing_phase = determineLandingPhase(landing_phase, &ls);
  
- if ((landing_phase == LANDING_BURN || landing_phase == FALLING) && ls.angle < 2.0 || ls.angle > 358.0) {
-   ls.altitude = RangeDist();
-   last_range_alt = RangeDist();
- }
-
- if (landing_phase == LANDING_BURN || landing_phase == FALLING) {
-  ls.altitude = last_range_alt;
- }
-
  displayState(&ls, landing_phase);
 
  double target_vx = -8 * (ls.pos_x - PLAT_X);
