@@ -182,6 +182,7 @@ double landing_height_offset = 30.0; // Height at which the lander will come to 
 struct LanderState ls;
 enum LandingPhase landing_phase = GAIN_ALTITUDE;
 SensorStatus sensor_status = {1, 1, 1, 1, 1};
+double last_range_alt;
 
 double stopAcc(double vel, double stop_dist) {
   return k * vel * vel / (2 * stop_dist);
@@ -247,6 +248,7 @@ void displayState(const struct LanderState *lander_state, enum LandingPhase phas
  printf("Velocity X:                   %f\n", lander_state->vel_x);
  printf("Velocity Y:                   %f\n", lander_state->vel_y);
  printf("Altitude Gnd:                 %f\n", lander_state->altitude);
+ printf("Last Range Alt:               %f\n", last_range_alt);
  printf("Landing Acc:                  %f\n", lander_state->landing_acc);
 }
 
@@ -306,6 +308,16 @@ void Lander_Control(void)
  
  ls = calculateLanderState(&sensor_history);
  landing_phase = determineLandingPhase(landing_phase, &ls);
+ 
+ if ((landing_phase == LANDING_BURN || landing_phase == FALLING) && ls.angle < 2.0 || ls.angle > 358.0) {
+   ls.altitude = RangeDist();
+   last_range_alt = RangeDist();
+ }
+
+ if (landing_phase == LANDING_BURN || landing_phase == FALLING) {
+  ls.altitude = last_range_alt;
+ }
+
  displayState(&ls, landing_phase);
 
  double target_vx = -8 * (ls.pos_x - PLAT_X);
