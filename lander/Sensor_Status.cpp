@@ -1,5 +1,7 @@
 #include "Lander.h"
 #include "Sensor_Fallback.h"
+#include "Sensor_History.h"
+#include "Sensor_Status.h"
 #include "math.h"
 #include <vector>
 
@@ -11,42 +13,42 @@ double prev_position_y = 0.0;
 double prev_angle = 0.0;
 
 // function to detect sensor failures by checking for anomalies
-void UpdateSensorStatus(SensorStatus sensor_status, SensorHistory sensor_history, std::vector<double> sonar) {
-    //UpdateSensorHistory();
+void UpdateSensorStatus(SensorStatus *sensor_status, SensorHistory sensor_history, std::vector<double> sonar) {
+    UpdateSensorHistory(*sensor_status);
     
     static int call_count = 0;
     call_count++;
     
      std::vector<int> exclusion_list;
     // Get current readings
-    double curr_velocity_x = GetSensorValue(VELOCITY_X, exclusion_list, sensor_status, sensor_history).value;
-    double curr_velocity_y = GetSensorValue(VELOCITY_Y, exclusion_list, sensor_status, sensor_history).value;
-    double curr_position_x = GetSensorValue(POSITION_X, exclusion_list, sensor_status, sensor_history).value;
-    double curr_position_y = GetSensorValue(POSITION_Y, exclusion_list, sensor_status, sensor_history).value;
-    double curr_angle = fmod(GetSensorValue(ANGLE, exclusion_list, sensor_status, sensor_history).value, 360.0);
+    double curr_velocity_x = GetSensorValue(VELOCITY_X, exclusion_list, *sensor_status, sensor_history).value;
+    double curr_velocity_y = GetSensorValue(VELOCITY_Y, exclusion_list, *sensor_status, sensor_history).value;
+    double curr_position_x = GetSensorValue(POSITION_X, exclusion_list, *sensor_status, sensor_history).value;
+    double curr_position_y = GetSensorValue(POSITION_Y, exclusion_list, *sensor_status, sensor_history).value;
+    double curr_angle = fmod(GetSensorValue(ANGLE, exclusion_list, *sensor_status, sensor_history).value, 360.0);
     
     // after a few calls, start checking for anomalies
     if (call_count > 10) {
         // check velocity X sensor
         if (fabs(curr_velocity_x - prev_velocity_x) > 15.0 || 
             (curr_velocity_x == prev_velocity_x && call_count > 10)) {
-            sensor_status.velocity_x_ok = 0;
+            sensor_status->velocity_x_ok = 0;
         }
         
         // check velocity Y sensor
         if (fabs(curr_velocity_y - prev_velocity_y) > 15.0 || 
             (curr_velocity_y == prev_velocity_y && call_count > 10)) {
-            sensor_status.velocity_y_ok = 0;
+            sensor_status->velocity_y_ok = 0;
         }
         
         // check position X sensor
         if (fabs(curr_position_x - prev_position_x) > 100.0) {
-            sensor_status.position_x_ok = 0;
+            sensor_status->position_x_ok = 0;
         }
         
         // check position Y sensor
         if (fabs(curr_position_y - prev_position_y) > 100.0) {
-            sensor_status.position_y_ok = 0;
+            sensor_status->position_y_ok = 0;
         }
         
         // check angle sensor
@@ -56,13 +58,13 @@ void UpdateSensorStatus(SensorStatus sensor_status, SensorHistory sensor_history
             angle_diff = 360.0 - angle_diff;
         }
         if (angle_diff > 90.0) {
-            sensor_status.angle_ok = 0;
+            sensor_status->angle_ok = 0;
         }
         
         // check sonar sensor
         static int sonar_has_had_readings = 0;
         static int prev_valid_count = 0;
-        double range_dist = GetSensorValue(RANGEDIST, exclusion_list, sensor_status, sensor_history).value;
+        double range_dist = GetSensorValue(RANGEDIST, exclusion_list, *sensor_status, sensor_history).value;
         
         int current_valid_count = 0;
         for (int i = 0; i < 36; i++) {
@@ -87,17 +89,17 @@ void UpdateSensorStatus(SensorStatus sensor_status, SensorHistory sensor_history
             
             // if laser sees ground but no sonar readings, sonar is broken
             if (downward_readings == 0) {
-                sensor_status.sonar_ok = 0;  // sonar failed
+                sensor_status->sonar_ok = 0;  // sonar failed
             }
         }
         
         // secondary check: pattern analysis (had readings before)
         if (sonar_has_had_readings) {
             if (current_valid_count == 0 && prev_valid_count > 3) {
-                sensor_status.sonar_ok = 0;  // complete sensor failure
+                sensor_status->sonar_ok = 0;  // complete sensor failure
             }
             else if (prev_valid_count > 10 && current_valid_count < 3) {
-                sensor_status.sonar_ok = 0;  // severe sensor degradation
+                sensor_status->sonar_ok = 0;  // severe sensor degradation
             }
         }
         
