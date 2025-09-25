@@ -23,6 +23,8 @@ void thrustAngle(double angle_rad, double acceleration, const struct LanderState
     Rotate(-1 * angle_delta);
   }
   
+  if (fabs(angle_delta) > 4) return;
+  
   printf("Burning at acceleration %f\n", acceleration);
   if (MT_OK) {
     Main_Thruster(acceleration / 35.0);

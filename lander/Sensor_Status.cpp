@@ -13,9 +13,7 @@ double prev_position_y = 0.0;
 double prev_angle = 0.0;
 
 // function to detect sensor failures by checking for anomalies
-void UpdateSensorStatus(SensorStatus *sensor_status, SensorHistory sensor_history, std::vector<double> sonar) {
-    UpdateSensorHistory(*sensor_status);
-    
+void UpdateSensorStatus(SensorStatus *sensor_status, SensorHistory *sensor_history, double sonar[36]) {
     static int call_count = 0;
     call_count++;
     
