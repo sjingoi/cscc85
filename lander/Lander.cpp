@@ -159,14 +159,20 @@
   Standard C libraries
 */
 #include <math.h>
+#include <vector>
 
 #include "Lander.h"
 #include "Lander_Control.h"
 #include "Thruster_Control.h"
 #include "stdio.h"
 #include "Sensor_Fallback.h"
+<<<<<<< HEAD
 #include "Denoising.h"
 #include "Sensor_History.h"
+=======
+#include "Sensor_History.h"
+#include "Sensor_Status.h"
+>>>>>>> origin/main
 
 // Constants
 double k = 5.5; // Constant adjustment factor to make physics work properly (determined by trial and error)
@@ -187,7 +193,7 @@ struct LanderState calculateLanderState() {
  struct LanderState ls;
  std::vector<int> exclusion_list;
  SensorStatus sensor_status = {1, 1, 1, 1, 1};
- SensorHistory sensor_history;
+ // Using global sensor_history variable
 
  ls.altitude = 1000 - Position_Y() - (1000 - PLAT_Y);
  ls.pos_x = GetSensorValue(POSITION_X, exclusion_list, sensor_status, sensor_history).value;
@@ -288,6 +294,7 @@ void Lander_Control(void)
         ACCESS THE SIMULATION STATE. That's cheating,
         I'll give you zero.
 **************************************************/
+<<<<<<< HEAD
  
  // DENOISING TEST: Compare raw vs filtered sensor readings
  static int test_counter = 0;
@@ -320,6 +327,8 @@ void Lander_Control(void)
    printf("====================\n");
  }
  
+=======
+>>>>>>> origin/main
  ls = calculateLanderState();
  landing_phase = determineLandingPhase(landing_phase, &ls);
  displayState(&ls, landing_phase);

@@ -1,10 +1,9 @@
 #pragma once
-
-#define READINGS 50
+#include "Lander.h"
 
 extern SensorHistory sensor_history;
 
-void UpdateSensorHistory();
+void UpdateSensorHistory(SensorStatus sensor_status);
 double GetHistoricalVelocityX(int steps_back);
 double GetHistoricalVelocityY(int steps_back);
 double GetHistoricalPositionX(int steps_back);
