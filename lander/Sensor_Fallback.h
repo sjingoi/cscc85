@@ -1,4 +1,7 @@
+#pragma once
+
 #include "Lander.h"
+#include "Sensor_History.h"
 #include <vector>
 
 // Structure for sensor value return from wrapper function

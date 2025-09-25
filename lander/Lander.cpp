@@ -185,7 +185,6 @@ struct LanderState calculateLanderState() {
  struct LanderState ls;
  std::vector<int> exclusion_list;
  SensorStatus sensor_status = {1, 1, 1, 1, 1};
- SensorHistory sensor_history;
 
  ls.altitude = 1000 - Position_Y() - (1000 - PLAT_Y);
  ls.pos_x = GetSensorValue(POSITION_X, exclusion_list, sensor_status, sensor_history).value;
@@ -202,23 +201,24 @@ struct LanderState calculateLanderState() {
 enum LandingPhase determineLandingPhase(enum LandingPhase current_phase, const struct LanderState *ls) {
  double landing_burn_target_acc = ls->max_acc * landing_burn_k;
  if (current_phase == GAIN_ALTITUDE) {
-  bool zero_x_vel = fabs(ls->vel_x) < 0.01;
-  bool zero_y_vel = fabs(ls->vel_y) < 0.01;
+  bool zero_x_vel = fabs(ls->vel_x) < 0.1;
+  bool zero_y_vel = fabs(ls->vel_y) < 0.1;
   bool target_alt = fabs(ls->pos_y - target_start_y < 1);
   if (zero_x_vel && zero_y_vel && target_alt) {
     return GO_ABOVE_LANDING_SITE;
+  } else {
+    return GAIN_ALTITUDE;
   }
  } else if (current_phase == GO_ABOVE_LANDING_SITE) {
   bool target_x = fabs(ls->pos_x - PLAT_X) < 10;
-  bool zero_x_vel = fabs(ls->vel_x) < .1;
+  bool zero_x_vel = fabs(ls->vel_x) < 0.1;
   if (zero_x_vel && target_x) {
     return FALLING;
+  } else {
+    return GO_ABOVE_LANDING_SITE;
   }
- } else if (current_phase == LANDED || 
-  ((current_phase == LANDING_BURN || current_phase == FALLING) && ls->vel_y >= landing_cutoff_v && fabs(ls->vel_x) <= landing_cutoff_v)) {
+ } else if (current_phase == LANDED || ((current_phase == LANDING_BURN) && ls->vel_y >= landing_cutoff_v)) {
   return LANDED;
- } if (current_phase == LANDING_BURN && (ls->landing_acc < landing_burn_target_acc / 2.0 || ls->vel_y >= landing_cutoff_v)) {
-  return FALLING;
  } else if (ls->landing_acc >= landing_burn_target_acc) {
   return LANDING_BURN;
  } else {
@@ -229,6 +229,8 @@ enum LandingPhase determineLandingPhase(enum LandingPhase current_phase, const s
 void displayState(const struct LanderState *lander_state, enum LandingPhase phase) {
  printf("===== Lander State ===============================\n");
  printf("PHASE:                        %d\n", phase);
+ printf("Position X:                   %f\n", lander_state->pos_x);
+ printf("Position Y:                   %f\n", lander_state->pos_y);
  printf("Velocity X:                   %f\n", lander_state->vel_x);
  printf("Velocity Y:                   %f\n", lander_state->vel_y);
  printf("Altitude Gnd:                 %f\n", lander_state->altitude);
@@ -286,29 +288,33 @@ void Lander_Control(void)
         ACCESS THE SIMULATION STATE. That's cheating,
         I'll give you zero.
 **************************************************/
- 
+ UpdateSensorHistory();
  ls = calculateLanderState();
  landing_phase = determineLandingPhase(landing_phase, &ls);
  displayState(&ls, landing_phase);
 
- double target_vx = -0.5 * (ls.pos_x - PLAT_X);
- double target_vy = -0.5 * (ls.pos_y - target_start_y);
- double target_ax = -0.5 * (ls.vel_x - target_vx);
- double target_ay = -0.5 * (-1 * ls.vel_y - target_vy) - (G_ACCEL);
- target_vx = (target_vx > 0) ? fmin(target_vx, 2) : fmax(target_vx, -2);
- target_vy = (target_vy > 0) ? fmin(target_vy, 10) : fmax(target_vy, -10);
+ double target_vx = -8 * (ls.pos_x - PLAT_X);
+ double target_vy = -8 * (ls.pos_y - target_start_y);
+ double max_vx = fmin(100, 0.1 * fabs(ls.pos_x - PLAT_X));
+ double max_vy = fmin(20, 0.1 * fabs(ls.pos_y - target_start_y));
+  target_vx = fmax(fmin(target_vx, max_vx), -max_vx);
+  target_vy = fmax(fmin(target_vy, max_vy), -max_vy);
+ double target_ax = -1 * (ls.vel_x - target_vx);
+ double target_ay = -1 * (-1 * ls.vel_y - target_vy) - (G_ACCEL);
  if (landing_phase == GAIN_ALTITUDE) {
   double c = 10;
   thrustVector(-1 * c * ls.vel_x, target_ay, &ls);
  } else if (landing_phase == GO_ABOVE_LANDING_SITE) {
   thrustVector(target_ax, target_ay, &ls);
  } else if (landing_phase == FALLING) {
-  orientLander(0, &ls);
-  Main_Thruster(0);
-  Left_Thruster(0);
-  Right_Thruster(0);
+  printf("%f \n", target_ax);
+  thrustVector(target_ax, 0.1, &ls);
  } else if (landing_phase == LANDING_BURN) {
-  thrustVector(target_ax, -1 * ls.landing_acc, &ls);
+  if (ls.altitude < 50.0) {
+    thrustVector(0, -1 * ls.landing_acc, &ls);
+  } else {
+    thrustVector(target_ax, -1 * ls.landing_acc, &ls);
+  }
  } else {
   // Turn off engine and do nothing else
   Main_Thruster(0);

@@ -2,21 +2,6 @@
 #include "Lander_Control.h"
 #include "stdio.h"
 
-#define READINGS 50
-// structure for sensor history
-typedef struct {
-    int current_index;
-    int count; // number of valid readings
-
-    double velocity_x_hist[READINGS];
-    double velocity_y_hist[READINGS];
-    double position_x_hist[READINGS];
-    double position_y_hist[READINGS];
-    double angle_hist[READINGS];
-    double range_dist_hist[READINGS];
-    double sonar_hist[READINGS][36]; // 36 sonar readings per time step
-} SensorHistory;
-
 SensorHistory sensor_history = {0, 0, {0}, {0}, {0}, {0}, {0}, {0}, {{0}}}; // global instance
 
 void UpdateSensorHistory() {

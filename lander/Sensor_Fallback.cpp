@@ -1,4 +1,5 @@
 #include "Sensor_Fallback.h"
+#include "Sensor_History.h"
 #include "Lander.h"
 #include "Lander_Control.h"
 #include <vector>
@@ -46,19 +47,20 @@ SensorValue GetSensorValue(SensorMapping sensor, std::vector<int> exclusion_list
 
 SensorValue GetVelocityX(std::vector<int> exclusion_list, SensorStatus sensor_status, SensorHistory sensor_history) {
     SensorValue sensor_value;
-    if (sensor_status.velocity_x_ok) {
-        sensor_value.value = Velocity_X();
-        sensor_value.mode = 0;
-        return sensor_value;
-    }
+    // if (sensor_status.velocity_x_ok) {
+    //     sensor_value.value = sensor_history.velocity_x_hist[sensor_history.current_index];;
+    //     sensor_value.mode = 0;
+    //     return sensor_value;
+    // }
 
     // Position X still functioning AND not excluded AND position_x is derivable
     exclusion_list.push_back(VELOCITY_X);
-    SensorValue position_x_sensor_value = GetSensorValue(POSITION_X, exclusion_list, sensor_status, sensor_history);
-    if (position_x_sensor_value.mode != 2) {
-        // TODO: implement velocity x derivation
-        return position_x_sensor_value;
-    }
+    // SensorValue position_x_sensor_value = GetSensorValue(POSITION_X, exclusion_list, sensor_status, sensor_history);
+    // if (position_x_sensor_value.mode != 2) {
+    //     // TODO: implement velocity x derivation
+    //     return position_x_sensor_value;
+    // }
+    sensor_value.value = (sensor_history.position_x_hist[sensor_history.current_index] - sensor_history.position_x_hist[(sensor_history.current_index + 1) % READINGS]) / READINGS;
 
     return sensor_value;
 }
@@ -66,7 +68,7 @@ SensorValue GetVelocityX(std::vector<int> exclusion_list, SensorStatus sensor_st
 SensorValue GetVelocityY(std::vector<int> exclusion_list, SensorStatus sensor_status, SensorHistory sensor_history) {
     SensorValue sensor_value;
     if (sensor_status.velocity_y_ok) {
-        sensor_value.value = Velocity_Y();
+        sensor_value.value = sensor_history.velocity_y_hist[sensor_history.current_index];
         sensor_value.mode = 0;
         return sensor_value;
     }
@@ -85,7 +87,7 @@ SensorValue GetVelocityY(std::vector<int> exclusion_list, SensorStatus sensor_st
 SensorValue GetPositionX(std::vector<int> exclusion_list, SensorStatus sensor_status, SensorHistory sensor_history) {
     SensorValue sensor_value;
     if (sensor_status.position_x_ok) {
-        sensor_value.value = Position_X();
+        sensor_value.value = sensor_history.position_x_hist[sensor_history.current_index];
         sensor_value.mode = 0;
         return sensor_value;
     }
@@ -104,7 +106,7 @@ SensorValue GetPositionX(std::vector<int> exclusion_list, SensorStatus sensor_st
 SensorValue GetPositionY(std::vector<int> exclusion_list, SensorStatus sensor_status, SensorHistory sensor_history) {
     SensorValue sensor_value;
     if (sensor_status.position_y_ok) {
-        sensor_value.value = Position_Y();
+        sensor_value.value = sensor_history.position_y_hist[sensor_history.current_index];
         sensor_value.mode = 0;
         return sensor_value;
     }
