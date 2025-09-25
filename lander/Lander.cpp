@@ -166,13 +166,10 @@
 #include "Thruster_Control.h"
 #include "stdio.h"
 #include "Sensor_Fallback.h"
-<<<<<<< HEAD
 #include "Denoising.h"
 #include "Sensor_History.h"
-=======
 #include "Sensor_History.h"
 #include "Sensor_Status.h"
->>>>>>> origin/main
 
 // Constants
 double k = 5.5; // Constant adjustment factor to make physics work properly (determined by trial and error)
@@ -294,41 +291,6 @@ void Lander_Control(void)
         ACCESS THE SIMULATION STATE. That's cheating,
         I'll give you zero.
 **************************************************/
-<<<<<<< HEAD
- 
- // DENOISING TEST: Compare raw vs filtered sensor readings
- static int test_counter = 0;
- test_counter++;
- 
- if (test_counter % 30 == 0) { // Print every 30 calls to avoid spam
-   sensor_history = {0}; // Your system might not use this
-   
-   // Get raw sensor readings
-   double raw_vel_x = Velocity_X();
-   double raw_vel_y = Velocity_Y();
-   double raw_pos_x = Position_X();
-   double raw_pos_y = Position_Y();
-   
-   // Get denoised readings
-   double clean_vel_x = DenoiseVelocityX(sensor_history);
-   double clean_vel_y = DenoiseVelocityY(sensor_history);
-   double clean_pos_x = DenoisePositionX(sensor_history);
-   double clean_pos_y = DenoisePositionY(sensor_history);
-   
-   printf("=== DENOISING TEST ===\n");
-   printf("VelX: Raw=%.3f, Clean=%.3f, Diff=%.3f\n", 
-          raw_vel_x, clean_vel_x, fabs(raw_vel_x - clean_vel_x));
-   printf("VelY: Raw=%.3f, Clean=%.3f, Diff=%.3f\n", 
-          raw_vel_y, clean_vel_y, fabs(raw_vel_y - clean_vel_y));
-   printf("PosX: Raw=%.2f, Clean=%.2f, Diff=%.2f\n", 
-          raw_pos_x, clean_pos_x, fabs(raw_pos_x - clean_pos_x));
-   printf("PosY: Raw=%.2f, Clean=%.2f, Diff=%.2f\n", 
-          raw_pos_y, clean_pos_y, fabs(raw_pos_y - clean_pos_y));
-   printf("====================\n");
- }
- 
-=======
->>>>>>> origin/main
  ls = calculateLanderState();
  landing_phase = determineLandingPhase(landing_phase, &ls);
  displayState(&ls, landing_phase);

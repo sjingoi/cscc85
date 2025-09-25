@@ -56,6 +56,20 @@ double GaussianFilter(double new_value, int sensor_id) {
     return ConvolutionFilter(new_value, gaussian_kernel, 5, sensor_id);
 }
 
+// triangular filter (linear weight decrease)
+double TriangularFilter(double new_value, int sensor_id) {
+    // 5-tap triangular kernel (normalized)
+    static double triangular_kernel[] = {0.06667, 0.13333, 0.20000, 0.26667, 0.33333};
+    return ConvolutionFilter(new_value, triangular_kernel, 5, sensor_id);
+}
+
+// uniform filter (simple moving average)
+double UniformFilter(double new_value, int sensor_id) {
+    // 5-tap uniform kernel
+    static double uniform_kernel[] = {0.2, 0.2, 0.2, 0.2, 0.2};
+    return ConvolutionFilter(new_value, uniform_kernel, 5, sensor_id);
+}
+
 // weighted average utility function
 double WeightedAverage(double* values, double* weights, int count) {
     if (count <= 0) return 0.0;
@@ -85,12 +99,12 @@ double DenoiseVelocityY(SensorHistory h) {
 
 double DenoisePositionX(SensorHistory h) {
     double current_value = Position_X();
-    return GaussianFilter(current_value, 2); // sensor_id = 2 for PosX
+    return TriangularFilter(current_value, 2); // sensor_id = 2 for PosX
 }
 
 double DenoisePositionY(SensorHistory h) {
     double current_value = Position_Y();
-    return GaussianFilter(current_value, 3); // sensor_id = 3 for PosY
+    return TriangularFilter(current_value, 3); // sensor_id = 3 for PosY
 }
 
 double DenoiseSonar(int sonar_index, SensorHistory h) {
@@ -108,5 +122,5 @@ double DenoiseSonar(int sonar_index, SensorHistory h) {
     // Use gaussian filter for sonar (smooth noise reduction)
     // Use sensor_id = 4 + sonar_index, but limit to available sensors
     int sensor_id = 4 + (sonar_index % 6); // Rotate through 6 sensor slots for 36 sonars
-    return GaussianFilter(current_value, sensor_id);
+    return UniformFilter(current_value, sensor_id);
 }
