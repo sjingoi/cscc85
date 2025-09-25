@@ -165,6 +165,7 @@
 #include "Thruster_Control.h"
 #include "stdio.h"
 #include "Sensor_Fallback.h"
+#include "Sensor_Status.h"
 
 // Constants
 double k = 5.5; // Constant adjustment factor to make physics work properly (determined by trial and error)
@@ -176,6 +177,8 @@ double landing_height_offset = 30.0; // Height at which the lander will come to 
 // Gobally declared state variables
 struct LanderState ls;
 enum LandingPhase landing_phase = GAIN_ALTITUDE;
+SensorStatus sensor_status = {1, 1, 1, 1, 1, 1}; // start with all functional
+SensorHistory sensor_history = {0, 0, {0}, {0}, {0}, {0}, {0}, {0}, {{0}}}; 
 
 double stopAcc(double vel, double stop_dist) {
   return k * vel * vel / (2 * stop_dist);
@@ -184,7 +187,6 @@ double stopAcc(double vel, double stop_dist) {
 struct LanderState calculateLanderState() {
  struct LanderState ls;
  std::vector<int> exclusion_list;
- SensorStatus sensor_status = {1, 1, 1, 1, 1};
  SensorHistory sensor_history;
 
  ls.altitude = 1000 - Position_Y() - (1000 - PLAT_Y);
@@ -286,7 +288,6 @@ void Lander_Control(void)
         ACCESS THE SIMULATION STATE. That's cheating,
         I'll give you zero.
 **************************************************/
- 
  ls = calculateLanderState();
  landing_phase = determineLandingPhase(landing_phase, &ls);
  displayState(&ls, landing_phase);
