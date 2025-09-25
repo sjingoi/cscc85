@@ -58,6 +58,7 @@ CPPSRCS       = Lander.cpp
 CPPSRCS		 += Thruster_Control.cpp
 CPPSRCS          += Sensor_Fallback.cpp
 CPPSRCS				+= Sensor_Status.cpp
+CPPSRCS          += Sensor_History.cpp
 
 ##############################################################################
 # Define additional rules that make should know about in order to compile our
