@@ -134,7 +134,7 @@ void particle_resample(float *part, float *bel, int n)
       rand_vals[i] = (float)rand() / RAND_MAX;
   }
 
-  // Sort the random values
+  // Sort the random values so that we can chose the samped values in order (ideally this would have been O(NlogN) but this works fine for now).
   for (int i = 0; i < n - 1; i++) {
       for (int k = i + 1; k < n; k++) {
           if (rand_vals[i] > rand_vals[k]) {
@@ -161,13 +161,13 @@ void particle_resample(float *part, float *bel, int n)
       new_particles[i * 3 + 2] = part[bel_index * 3 + 2];
   }
   
-  // Copy new particles back to original array
   memcpy(part, new_particles, n * 3 * sizeof(float));
   free(new_particles);
   free(rand_vals);
   return;  
 }
 
+// Calcualte log probabilty that the lidar the difference between lidar and GT is due to noise
 float p_noise(float *gt, const float *lid, int gt_samples, int lid_samples,
               float sigma, int offset)
 {
@@ -182,7 +182,6 @@ float p_noise(float *gt, const float *lid, int gt_samples, int lid_samples,
         int idx = (offset + j) % gt_samples;
         float err = gt[idx] - lid[j];
 
-        // symmetric clamp:
         if (err > 1000.0f) err = 1000.0f;
         else if (err < -1000.0f) err = -1000.0f;
 
