@@ -33,6 +33,8 @@
 #include <string.h>
 #include <pthread.h>
 
+#include <math.h>
+
 #define TIME_STEP 32
 #define LEFT 0
 #define RIGHT 1
@@ -125,8 +127,71 @@ void particle_resample(float *part, float *bel, int n)
   // you'll need to create a temporary array - be sure to free it! don't leave
   // memory leaks because this function will be called lots of times, it will
   // eat up your memory if you're not careful.
+
+  // Create a sorted array of random values between 0 and 1
+  float *rand_vals = (float *)malloc(n * sizeof(float));
+  for (int i = 0; i < n; i++) {
+      rand_vals[i] = (float)rand() / RAND_MAX;
+  }
+
+  // Sort the random values
+  for (int i = 0; i < n - 1; i++) {
+      for (int k = i + 1; k < n; k++) {
+          if (rand_vals[i] > rand_vals[k]) {
+              float temp = rand_vals[i];
+              rand_vals[i] = rand_vals[k];
+              rand_vals[k] = temp;
+          }
+      }
+  }
+
+  // Resample particles based on belief values
+  float *new_particles = (float *)malloc(n * 3 * sizeof(float));
+
+  int bel_index = 0;
+  float cumulative_belief = bel[0];
+  for (int i = 0; i < n; i++) {
+      while (rand_vals[i] > cumulative_belief && bel_index < n - 1) {
+          bel_index++;
+          cumulative_belief += bel[bel_index];
+      }
+      // Copy the selected particle to the new particles array
+      new_particles[i * 3] = part[bel_index * 3];
+      new_particles[i * 3 + 1] = part[bel_index * 3 + 1];
+      new_particles[i * 3 + 2] = part[bel_index * 3 + 2];
+  }
   
+  // Copy new particles back to original array
+  memcpy(part, new_particles, n * 3 * sizeof(float));
+  free(new_particles);
+  free(rand_vals);
   return;  
+}
+
+float p_noise(float *gt, const float *lid, int gt_samples, int lid_samples,
+              float sigma, int offset)
+{
+    offset = offset % gt_samples;
+    lid_samples = (lid_samples > gt_samples) ? gt_samples : lid_samples;
+
+    float log_p = 0.0f;
+    float c = -0.5f * logf(2.0f * M_PI * sigma * sigma);
+    float inv2sig2 = 1.0f / (2.0f * sigma * sigma);
+
+    for (int j = 0; j < lid_samples; j++) {
+        int idx = (offset + j) % gt_samples;
+        float err = gt[idx] - lid[j];
+
+        // symmetric clamp:
+        if (err > 1000.0f) err = 1000.0f;
+        else if (err < -1000.0f) err = -1000.0f;
+
+        log_p += c - (err * err) * inv2sig2;
+    }
+
+    log_p /= lid_samples;
+
+    return log_p;
 }
 
 float particle_fitness(float *parts, int i, float *gt, const float *lid, int gt_samples, int lid_samples, float noise)
@@ -175,8 +240,26 @@ float particle_fitness(float *parts, int i, float *gt, const float *lid, int gt_
   // TO DO: Implement this function to compute and return the belief
   //        value (fitness value) for a particle. 
   
- return 1.0;         // Return the likelihood
-  
+  int best_offset = 0;
+  float best_logp = -INFINITY;
+  for (int rot_offset = 0; rot_offset < gt_samples; rot_offset++) {
+      float logp = p_noise(gt, lid, gt_samples, lid_samples, noise, rot_offset);
+      if (logp > best_logp) {
+          best_logp = logp;
+          best_offset = rot_offset;
+      }
+  }
+
+  // Update particle orientation (theta). Keep the same sign convention you use elsewhere.
+  float theta = (float)best_offset * (2.0f * PI / (float)gt_samples);
+  *(parts + (3*i) + 2) = theta;
+
+  // Convert to a positive fitness in a numerically stable way.
+  // You can exponentiate relative to some constant if you want comparable positive numbers.
+  // Here we simply return exp(best_logp) — caller normalizes later.
+  if (!isfinite(best_logp))
+      return 0.0f;
+  return expf(best_logp);
 }
 
 //// YOU DO NOT NEED TO MODIFY ANY CODE BELOW THIS POINT - but you are encouraged
