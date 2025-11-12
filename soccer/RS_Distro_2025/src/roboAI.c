@@ -793,4 +793,32 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
  there.
 **********************************************************************************/
 
+Coordinate detectGoalPosition() {
+    printf("Detecting goal position...\n");
+    Coordinate goal = {100, 0}; // dummy
+    return goal;
+}
+
+Coordinate detectBallPosition() {
+    printf("Detecting ball position...\n");
+    Coordinate ball = {50, 0}; // dummy
+    return ball;
+}
+
+Coordinate computeCoordinates(Coordinate ball, Coordinate goal) {
+    Coordinate vector;
+    vector.x = goal.x - ball.x;
+    vector.y = goal.y - ball.y;
+    printf("Computed path: (%d, %d)\n", vector.x, vector.y);
+    return vector;
+}
+
+
+void kick_ball() {
+  printf("Kicking ball\n");
+  BT_drive(MOTOR_A, MOTOR_D, 100);
+  usleep(10000);
+  BT_all_stop();
+}
+
 

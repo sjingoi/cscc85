@@ -151,4 +151,9 @@ struct displayList *clearDP(struct displayList *head);
    playing functionality below.
 *****************************************************************************/
 
+typedef struct {
+    int x;
+    int y;
+} Coordinate;
+
 #endif
