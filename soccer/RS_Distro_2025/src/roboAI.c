@@ -33,6 +33,9 @@ extern int sx;              // Get access to the image size from the imageCaptur
 extern int sy;
 int laggy=0;
 
+// Distance from ball to position bot for kick (in pixels) we can update this later
+#define KICK_POSITION_DISTANCE 80.0
+
 /**************************************************************
  * Display List Management
  * 
@@ -755,8 +758,43 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
  }
  else
  {
-  // Case 101 Align to the target point based off heading
   switch (ai->st.state) {
+    // State 100: Set initial data to start off the penalty kick
+    case 100:
+      // Sets the shooting vector of the ball to the goal (lets just assume that it will not fail right now)
+      {
+        double goal_x, goal_y;
+        calculateGoalPosition(ai, &goal_x, &goal_y);
+
+        if (calculateShootingVector(ai, &goal_x, &goal_y, &ai->st.shootingVectorX, &ai->st.shootingVectorY)) {
+          // Set the vector needed for the bot to reach a target point that is x distance from the ball
+          // Using the shooting vector, extend x distance from the ball in the OPPOSITE direction of the shooting vector
+          // (behind the ball) so the bot can approach and kick the ball forward
+          if (ai->st.ball != NULL && ai->st.ballID == 1) {
+            // Get ball position
+            double ball_x = ai->st.ball->cx;
+            double ball_y = ai->st.ball->cy;
+            
+            // Calculate target point: ball position - (shooting_vector * distance)
+            // The shooting vector points from ball to goal, so we go opposite to be behind the ball
+            ai->st.targetPointX = ball_x - (ai->st.shootingVectorX * KICK_POSITION_DISTANCE);
+            ai->st.targetPointY = ball_y - (ai->st.shootingVectorY * KICK_POSITION_DISTANCE);
+
+            // calculate the vector of the bot to the target point
+            calculateTargetPointVector(ai, &ai->st.targetPointX, &ai->st.targetPointY, &ai->st.targetPointVectorX, &ai->st.targetPointVectorY);
+          }
+        }
+      }
+      
+      // We now have:
+      // - The shooting vector of the ball to the goal
+      // - The target point for the bot to reach
+      // - The vector of the bot to the target point
+      
+      // Transition to state 101: Pathing to the target point
+      ai->st.state = 101;
+      break;
+
     case 101:
       // Code to align to the target point based off heading
       // Calculate the vector of the bot to the target point
@@ -770,6 +808,7 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
       // Code to align to the heading of the goal based off the shooting vector
       // Check if we are aligned along the shooting vector
       // If aligned stop motors and transition to state 104
+
       break;
     case 104:
       // Code to kick the ball
@@ -864,6 +903,21 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
 //          - Celebrate or something cause if you missing the goal then rip lmao
 
 
+// Helper function that returns the goal position based on the side the bot is on
+int calculateGoalPosition(struct RoboAI *ai, double *goal_x, double *goal_y) {
+  // Side 0: Left side bot, goal is on the right
+  // Side 1: Right side bot, goal is on the left
+  if (ai->st.side == 0) {
+    *goal_x = sx - 1;
+  } else {
+    // Right side bot, goal is on the left
+    *goal_x = 0;
+  }
+  // Assumption that the goal is in the middle of the field vertically
+  *goal_y = sy / 2.0;
+  return 1;
+}
+
 // This helper calculates the vector between the ball and the goal with the goal being the forward direction
 // Returns: 1 on success, 0 on failure (if ball position not available)
 // Output parameters: goal_x, goal_y - goal center coordinates
@@ -911,6 +965,17 @@ int calculateShootingVector(struct RoboAI *ai, double *goal_x, double *goal_y, d
     *vec_y = dy / magnitude;
     
     return 1;
+}
+
+// Calculate the vector form from the bot to a target point
+int calculateTargetPointVector(double *targetPointX, double *targetPointY, double *vectorX, double *vectorY) {
+  double dx = *targetPointX - ai->st.self->cx;
+  double dy = *targetPointY - ai->st.self->cy;
+  // Normalize the vector
+  double magnitude = sqrt(dx * dx + dy * dy);
+  *vectorX = dx / magnitude;
+  *vectorY = dy / magnitude;
+  return 1;
 }
 
 // Calculate if two points are within a given distance epsilon

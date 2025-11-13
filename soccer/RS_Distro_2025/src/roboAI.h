@@ -83,6 +83,13 @@ struct AI_data{
 	double ovx,ovy;			       // Current opponent [vx vy]
 	double omx,omy;			       // Opponent motion vector
 	double odx,ody;                // Opponent heading direction (from blob shape)
+
+	// Normalized shooting vector of the ball to the goal
+	struct blob *shootingVector;
+	double shootingVectorX, shootingVectorY;
+	
+	// Target point for positioning before kick (x distance behind the ball along shooting vector)
+	double targetPointX, targetPointY;
 };
 
 struct RoboAI {
