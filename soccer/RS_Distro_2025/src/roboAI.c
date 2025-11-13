@@ -831,7 +831,7 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
 //          - Check if the bot is within the target diameter (if so then transition to state 3.3)
 //          - If not then continue to move forward or backward to get to the target diameter
 // State 3.3: Circumference Positioning
-//          - Check if the bot is aligned to start driving along the circumference of the circle we have around the ball
+//          - Check if the bot is aligned to start driving along the circumference of the circle we have around the ball (the bot will be tangent to the circle if aligned correctly)
 //          - If not then start a turn then transition to state 3.4: Vector Positioning
 // State 3.4: Circumference Alignment Positioning
 //          - Check if the bot is aligned along the circumference of the circle we have around the ball
@@ -900,4 +900,33 @@ int calculateShootingVector(struct RoboAI *ai, double *goal_x, double *goal_y, d
     *vec_y = dy / magnitude;
     
     return 1;
+}
+
+// Calculate if two points are within a given distance epsilon
+// Returns: 1 on success, 0 on failure (if points not available)
+int calculatePointsWithinEpsilon(double *x1, double *y1, double *x2, double *y2, double epsilon) {
+    // Calculate the distance between the two points with 2 norm
+    double distance = sqrt(pow(*x1 - *x2, 2) + pow(*y1 - *y2, 2));
+    // Check if the distance is within the epsilon
+    if (distance <= epsilon) {
+        return 1;
+    }
+    return 0;
+}
+
+// Calculate if two headings are within a given angle epsilon (can be radian or degree just pick one and modify this function)
+int calculateHeadingDifference(double *heading1, double *heading2, double epsilon) {
+    // Calculate the difference between the two headings
+    double difference = fabs(*heading1 - *heading2);
+    // Check if the difference is within the epsilon
+    if (difference <= epsilon) {
+        return 1;
+    }
+    return 0;
+}
+
+// Some helper to calculate the ratio of wheel speed needed to turn an arc of a circle of diameter x
+int calculateWheelSpeedRatio(double *arcDiameter, double *ratio) {
+  // lets trial and error how much torque the wheels have before we fill this out 
+  return 1;
 }
