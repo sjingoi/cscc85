@@ -755,6 +755,29 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
  }
  else
  {
+  // Case 101 Align to the target point based off heading
+  switch (ai->st.state) {
+    case 101:
+      // Code to align to the target point based off heading
+      // Calculate the vector of the bot to the target point
+      // Motors are started to driving forward here then we transition to state 102
+      break;
+    case 102:
+      // Code to drive to that point until we are within epsilon
+      // Motors are stopped once we are within epsilon of the point and initiate a turn then transition to state 103
+      break;
+    case 103: 
+      // Code to align to the heading of the goal based off the shooting vector
+      // Check if we are aligned along the shooting vector
+      // If aligned stop motors and transition to state 104
+      break;
+    case 104:
+      // Code to kick the ball
+      break;
+  }
+
+
+
   /****************************************************************************
    TO DO:
    You will need to replace this 'catch-all' code with actual program logic to
