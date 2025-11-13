@@ -831,7 +831,7 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
 //          - Check if the bot has:
 //            - Good diameter around the ball
 //            - Good alignment with the shooting vector
-//          - If so then transitions to state 3.7 and full send motors with max power
+//          - If so then transitions to state 4 and full send motors with max power
 //          - else restart the alignment process by transitioning to state 3.1
 // State 4: Kick state
 //          - Check if the ball has moved since its last known location by some epsilon (2 norm?)
