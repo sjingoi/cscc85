@@ -779,6 +779,7 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
     track_agents(ai, blobs);
 
     if (ai->st.state < 100) {
+    } else if (ai->st.state < 200) {
       switch(ai->st.state) {
         case 101: // Initial state, bot not moving
           break;
@@ -789,10 +790,7 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
         case 104: // Kick state
           break;
         case 105: // Goal state
-
       }
-
-    } else if (ai->st.state < 200) {
 
     } else if (ai->st.state < 300) {
     chase_ball(ai, blobs); 
