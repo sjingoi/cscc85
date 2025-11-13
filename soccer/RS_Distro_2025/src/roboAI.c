@@ -776,31 +776,28 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
 //  fprintf(stderr,"Just trackin'!\n");	// bot, opponent, and ball.
 //  track_agents(ai,blobs);		// Currently, does nothing but endlessly track
 // Update blob tracking for this frame
-    //track_agents(ai, blobs);
+    track_agents(ai, blobs);
 
-    switch (ai->st.state)
-    {
-        case 1:
-            // Soccer mode
-            fprintf(stderr, "Soccer mode (state 1) not yet implemented.\n");
-            break;
+    if (ai->st.state < 100) {
+      switch(ai->st.state) {
+        case 101: // Initial state, bot not moving
+          break;
+        case 102: // Pathing to the ball
+          break;
+        case 103: // Alignment check
+          break;
+        case 104: // Kick state
+          break;
+        case 105: // Goal state
 
-        case 101:
-            // Penalty mode
-            fprintf(stderr, "Penalty mode (state 101) not yet implemented.\n");
-            break;
+      }
 
-        case 201:
-            // ---- CHASE MODE ----
-            // fprintf(stderr, "Chase mode active.\n");
-            chase_ball(ai, blobs);   // <--- Call your function here!
-            break;
+    } else if (ai->st.state < 200) {
 
-        default:
-            fprintf(stderr, "Unknown AI state: %d\n", ai->st.state);
-            break;
-    }
+    } else if (ai->st.state < 300) {
+    chase_ball(ai, blobs); 
  }
+}
 
 }
 
@@ -838,63 +835,114 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
 //     return vector;
 // }
 
-#define DRIVE_SPEED     30       // forward speed
-#define TURN_SPEED      30       // turning speed
-#define ANGLE_THRESHOLD 2      // radians (~5-6 degrees)
-#define DIST_THRESHOLD  10       // pixels
+void normalize_vector(double *x, double *y) {
+    double mag = sqrt((*x)*(*x) + (*y)*(*y));
+    if (mag > 1e-6) { *x /= mag; *y /= mag; }
+}
 
+void move_forward(int pw) {
+    BT_drive(MOTOR_A, MOTOR_D, pw);
+}
+
+void turn_left(int pw) {
+    BT_turn(MOTOR_A, -pw, MOTOR_D, pw);
+}
+
+void turn_right(int pw) {
+    BT_turn(MOTOR_A, pw, MOTOR_D, -pw);
+}
+
+
+#define DRIVE_SPEED     20       // forward speed
+#define TURN_SPEED      30       // turning speed
+#define ANGLE_THRESHOLD 0.5      // radians (~5-6 degrees)
+#define DIST_THRESHOLD  10       // pixels
 void chase_ball(struct RoboAI *ai, struct blob *blobs)
 {
-    struct blob *my_bot = ai->st.self;  // use self directly
-    struct blob *ball = id_coloured_blob2(ai, blobs, 2); // ball
+    struct blob *my_bot = ai->st.self;
+    struct blob *ball = ai->st.ball;
 
-    if (my_bot == NULL || ball == NULL) {
+    if (!my_bot || !ball) {
         BT_all_stop(0);
         return;
     }
 
-    double dx = ball->cx - my_bot->cx;
-    double dy = ball->cy - my_bot->cy;
-    double distance = sqrt(dx*dx + dy*dy);
+    // --- Parameters
+    double theta_th = 0.85;      // cos(angle threshold)
+    double dis_th   = 200;       // distance threshold
+    int drive_pw    = 30;
+    int turn_pw     = 30;
 
-    if (distance < DIST_THRESHOLD) {
-        BT_all_stop(0);
-        return;
+    // --- Ball/self vectors
+    double bx = ball->cx - my_bot->cx;
+    double by = ball->cy - my_bot->cy;
+    double sx = my_bot->dx;
+    double sy = my_bot->dy;
+
+    normalize_vector(&bx, &by);
+    normalize_vector(&sx, &sy);
+
+    double c_theta = bx * sx + by * sy;
+    double dist = sqrt((ball->cx - my_bot->cx)*(ball->cx - my_bot->cx) +
+                       (ball->cy - my_bot->cy)*(ball->cy - my_bot->cy));
+
+    // --- Mini FSM for chase states 201-299
+    switch(ai->st.state) {
+        case 201:  // Turn toward the ball
+            if (dist < dis_th) {
+                fprintf(stderr, "[201] Ball reached! Switching to kick.\n");
+                ai->st.state = 221;
+                return;
+            }
+
+            if (c_theta < 0) {
+                fprintf(stderr, "[201] Facing away, turn 180.\n");
+                turn_right(50);
+                return;
+            }
+
+            if (c_theta < theta_th) {
+                double cross = sx * by - sy * bx;
+                if (cross < 0) {
+                    fprintf(stderr, "[201] Turning left toward ball.\n");
+                    turn_left(turn_pw);
+                } else {
+                    fprintf(stderr, "[201] Turning right toward ball.\n");
+                    turn_right(turn_pw);
+                }
+            } else {
+                fprintf(stderr, "[201] Facing ball, start driving.\n");
+                ai->st.state = 211;
+            }
+            break;
+
+        case 211:  // Drive toward the ball
+            if (dist < dis_th) {
+                fprintf(stderr, "[211] Reached ball! Switching to kick.\n");
+                ai->st.state = 221;
+                return;
+            }
+
+            if (c_theta < theta_th) {
+                fprintf(stderr, "[211] Angle off, turn toward ball.\n");
+                ai->st.state = 201;
+                return;
+            }
+
+            fprintf(stderr, "[211] Driving forward toward ball.\n");
+            move_forward(drive_pw);
+            break;
+
+        case 221:  // Reached ball / Kick
+            fprintf(stderr, "[221] Ball reached, perform kick.\n");
+            move_forward(100);   // simulate kick
+            ai->st.state = 201;  // reset to chase initial
+            break;
+
+        default:
+            fprintf(stderr, "[CHASE] Unknown state %d, default to 201.\n", ai->st.state);
+            ai->st.state = 201;
+            break;
     }
-
-    double target_angle = atan2(dy, dx);
-    double bot_angle;
-
-    // Prefer motion vector if moving, otherwise use heading
-    if (my_bot->vx != 0 || my_bot->vy != 0) {
-        bot_angle = atan2(my_bot->vy, my_bot->vx);
-    } else {
-        bot_angle = atan2(ai->st.smy, ai->st.smx);  // stable heading
-    }
-
-    printf("target: %.1f, current: %.1f", target_angle, bot_angle);
-
-    double angle_error = target_angle - bot_angle;
-    while (angle_error > M_PI)  angle_error -= 2*M_PI;
-    while (angle_error < -M_PI) angle_error += 2*M_PI;
-
-    // if (fabs(angle_error) > ANGLE_THRESHOLD) {
-    //     if (angle_error > 0)
-    //         BT_turn(MOTOR_A, TURN_SPEED, MOTOR_D, -TURN_SPEED);
-    //     else
-    //         BT_turn(MOTOR_A, -TURN_SPEED, MOTOR_D, TURN_SPEED);
-    // } else {
-    //     BT_drive(MOTOR_A, MOTOR_D, DRIVE_SPEED);
-    // }
 }
-
-
-
-void kick_ball() {
-  printf("Kicking ball\n");
-  BT_drive(MOTOR_A, MOTOR_D, 100);
-  usleep(10000);
-  BT_all_stop(0);
-}
-
 
