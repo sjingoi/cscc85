@@ -795,18 +795,6 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
 
 
 // PENALTY KICK STUFF
-// 1. calculate the pathing needed to reach the ball (maybe an array of a tuples that is distance + heading) (eyes is doing this part as its for chasing anyways)
-// 2. calculate the shooting angle needed to get the ball within the goal
-//    - find the points for the goal and the bot
-//    - calculate the vector between them with a forward direction
-// 3. move the bot to a point in the vector with same direction
-// 4. enter into the kick state with a check on whether the distance to the ball
-
-
-// states that will be needed for each of the steps
-// 1. Calculate pathing is not a state that is needed as that can be done on the fly assuming we know the bots current heading
-// 2. Calculate shooting angle and the consequent vector is alsos stateless 
-// 3. Enter into moving bot travelling to point state
 
 // Gist of state transactions (rename state numbers into the actual groups later)
 // State 1: Initial state, bot not moving
