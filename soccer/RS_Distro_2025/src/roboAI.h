@@ -156,4 +156,6 @@ typedef struct {
     int y;
 } Coordinate;
 
+void chase_ball(struct RoboAI *ai, struct blob *blobs);
+
 #endif

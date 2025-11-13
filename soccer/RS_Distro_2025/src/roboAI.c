@@ -777,7 +777,6 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
 //  track_agents(ai,blobs);		// Currently, does nothing but endlessly track
 // Update blob tracking for this frame
     //track_agents(ai, blobs);
-    fprintf(stderr, "Made it here");
 
     switch (ai->st.state)
     {
@@ -793,7 +792,7 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
 
         case 201:
             // ---- CHASE MODE ----
-            fprintf(stderr, "Chase mode active.\n");
+            // fprintf(stderr, "Chase mode active.\n");
             chase_ball(ai, blobs);   // <--- Call your function here!
             break;
 
@@ -839,60 +838,54 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
 //     return vector;
 // }
 
-#define X_THRESHOLD 10.0    // pixels
-#define Y_THRESHOLD 15.0
-#define TURN_SPEED 20
-#define MOVE_SPEED 30
+#define DRIVE_SPEED     30       // forward speed
+#define TURN_SPEED      30       // turning speed
+#define ANGLE_THRESHOLD 2      // radians (~5-6 degrees)
+#define DIST_THRESHOLD  10       // pixels
 
 void chase_ball(struct RoboAI *ai, struct blob *blobs)
 {
-    struct blob *blue_bot, *ball;
-    double dx, dy;
+    struct blob *my_bot = ai->st.self;  // use self directly
+    struct blob *ball = id_coloured_blob2(ai, blobs, 2); // ball
 
-    blue_bot = id_coloured_blob2(ai, blobs, 0);   // Blue robot
-    ball     = id_coloured_blob2(ai, blobs, 2);   // Yellow ball
-
-    if (blue_bot == NULL || ball == NULL) {
-        printf("Chase: Robot or ball not visible!\n");
+    if (my_bot == NULL || ball == NULL) {
         BT_all_stop(0);
         return;
     }
 
-    // Compute position error between robot and ball
-    dx = ball->cx - blue_bot->cx;   // X difference (horizontal)
-    dy = ball->cy - blue_bot->cy;   // Y difference (vertical)
+    double dx = ball->cx - my_bot->cx;
+    double dy = ball->cy - my_bot->cy;
+    double distance = sqrt(dx*dx + dy*dy);
 
-    printf("dx = %.1f, dy = %.1f\n", dx, dy);
-
-    // ---- STEP 1: Align horizontally (X) ----
-    if (fabs(dx) > X_THRESHOLD) {
-        if (dx > 0) {
-            printf("Aligning X: Turn right\n");
-            // Right turn = right motor backward, left forward
-            BT_turn(MOTOR_A, TURN_SPEED, MOTOR_D, -TURN_SPEED);
-        } else {
-            printf("Aligning X: Turn left\n");
-            // Left turn = left motor backward, right forward
-            BT_turn(MOTOR_A, -TURN_SPEED, MOTOR_D, TURN_SPEED);
-        }
-        return;  // ✅ Only turning this frame
+    if (distance < DIST_THRESHOLD) {
+        BT_all_stop(0);
+        return;
     }
 
-    // ---- STEP 2: Once aligned in X, align vertically (Y) ----
-    if (fabs(dy) > Y_THRESHOLD) {
-        if (dy > 0) {
-            printf("Aligning Y: Move forward\n");
-            BT_drive(MOTOR_A, MOTOR_D, DRIVE_SPEED);
-        } else {
-            printf("Aligning Y: Move backward\n");
-            BT_drive(MOTOR_A, MOTOR_D, -DRIVE_SPEED);
-        }
-        return;  // ✅ Only moving this frame
+    double target_angle = atan2(dy, dx);
+    double bot_angle;
+
+    // Prefer motion vector if moving, otherwise use heading
+    if (my_bot->vx != 0 || my_bot->vy != 0) {
+        bot_angle = atan2(my_bot->vy, my_bot->vx);
+    } else {
+        bot_angle = atan2(ai->st.smy, ai->st.smx);  // stable heading
     }
 
-    // ---- STEP 3: Fully aligned ----
-    printf("Aligned with ball — stop.\n");
-    BT_all_stop(0);
+    printf("target: %.1f, current: %.1f", target_angle, bot_angle);
+
+    double angle_error = target_angle - bot_angle;
+    while (angle_error > M_PI)  angle_error -= 2*M_PI;
+    while (angle_error < -M_PI) angle_error += 2*M_PI;
+
+    // if (fabs(angle_error) > ANGLE_THRESHOLD) {
+    //     if (angle_error > 0)
+    //         BT_turn(MOTOR_A, TURN_SPEED, MOTOR_D, -TURN_SPEED);
+    //     else
+    //         BT_turn(MOTOR_A, -TURN_SPEED, MOTOR_D, TURN_SPEED);
+    // } else {
+    //     BT_drive(MOTOR_A, MOTOR_D, DRIVE_SPEED);
+    // }
 }
 
 
