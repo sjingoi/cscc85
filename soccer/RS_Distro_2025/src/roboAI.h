@@ -157,5 +157,6 @@ typedef struct {
 } Coordinate;
 
 void chase_ball(struct RoboAI *ai, struct blob *blobs);
+int calculateShootingVector(struct RoboAI *ai, double *goal_x, double *goal_y, double *vec_x, double *vec_y);
 
 #endif
