@@ -775,6 +775,32 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
   *****************************************************************************/
 //  fprintf(stderr,"Just trackin'!\n");	// bot, opponent, and ball.
 //  track_agents(ai,blobs);		// Currently, does nothing but endlessly track
+// Update blob tracking for this frame
+    //track_agents(ai, blobs);
+    fprintf(stderr, "Made it here");
+
+    switch (ai->st.state)
+    {
+        case 1:
+            // Soccer mode
+            fprintf(stderr, "Soccer mode (state 1) not yet implemented.\n");
+            break;
+
+        case 101:
+            // Penalty mode
+            fprintf(stderr, "Penalty mode (state 101) not yet implemented.\n");
+            break;
+
+        case 201:
+            // ---- CHASE MODE ----
+            fprintf(stderr, "Chase mode active.\n");
+            chase_ball(ai, blobs);   // <--- Call your function here!
+            break;
+
+        default:
+            fprintf(stderr, "Unknown AI state: %d\n", ai->st.state);
+            break;
+    }
  }
 
 }
@@ -793,32 +819,89 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
  there.
 **********************************************************************************/
 
-Coordinate detectGoalPosition() {
-    printf("Detecting goal position...\n");
-    Coordinate goal = {100, 0}; // dummy
-    return goal;
+// Coordinate detectGoalPosition() {
+//     printf("Detecting goal position...\n");
+//     Coordinate goal = {100, 0}; // dummy
+//     return goal;
+// }
+
+// Coordinate detectBallPosition() {
+//     printf("Detecting ball position...\n");
+//     Coordinate ball = {50, 0}; // dummy
+//     return ball;
+// }
+
+// Coordinate computeCoordinates(Coordinate ball, Coordinate goal) {
+//     Coordinate vector;
+//     vector.x = goal.x - ball.x;
+//     vector.y = goal.y - ball.y;
+//     printf("Computed path: (%d, %d)\n", vector.x, vector.y);
+//     return vector;
+// }
+
+#define X_THRESHOLD 10.0    // pixels
+#define Y_THRESHOLD 15.0
+#define TURN_SPEED 20
+#define MOVE_SPEED 30
+
+void chase_ball(struct RoboAI *ai, struct blob *blobs)
+{
+    struct blob *blue_bot, *ball;
+    double dx, dy;
+
+    blue_bot = id_coloured_blob2(ai, blobs, 0);   // Blue robot
+    ball     = id_coloured_blob2(ai, blobs, 2);   // Yellow ball
+
+    if (blue_bot == NULL || ball == NULL) {
+        printf("Chase: Robot or ball not visible!\n");
+        BT_all_stop(0);
+        return;
+    }
+
+    // Compute position error between robot and ball
+    dx = ball->cx - blue_bot->cx;   // X difference (horizontal)
+    dy = ball->cy - blue_bot->cy;   // Y difference (vertical)
+
+    printf("dx = %.1f, dy = %.1f\n", dx, dy);
+
+    // ---- STEP 1: Align horizontally (X) ----
+    if (fabs(dx) > X_THRESHOLD) {
+        if (dx > 0) {
+            printf("Aligning X: Turn right\n");
+            // Right turn = right motor backward, left forward
+            BT_turn(MOTOR_A, TURN_SPEED, MOTOR_D, -TURN_SPEED);
+        } else {
+            printf("Aligning X: Turn left\n");
+            // Left turn = left motor backward, right forward
+            BT_turn(MOTOR_A, -TURN_SPEED, MOTOR_D, TURN_SPEED);
+        }
+        return;  // ✅ Only turning this frame
+    }
+
+    // ---- STEP 2: Once aligned in X, align vertically (Y) ----
+    if (fabs(dy) > Y_THRESHOLD) {
+        if (dy > 0) {
+            printf("Aligning Y: Move forward\n");
+            BT_drive(MOTOR_A, MOTOR_D, DRIVE_SPEED);
+        } else {
+            printf("Aligning Y: Move backward\n");
+            BT_drive(MOTOR_A, MOTOR_D, -DRIVE_SPEED);
+        }
+        return;  // ✅ Only moving this frame
+    }
+
+    // ---- STEP 3: Fully aligned ----
+    printf("Aligned with ball — stop.\n");
+    BT_all_stop(0);
 }
 
-Coordinate detectBallPosition() {
-    printf("Detecting ball position...\n");
-    Coordinate ball = {50, 0}; // dummy
-    return ball;
-}
-
-Coordinate computeCoordinates(Coordinate ball, Coordinate goal) {
-    Coordinate vector;
-    vector.x = goal.x - ball.x;
-    vector.y = goal.y - ball.y;
-    printf("Computed path: (%d, %d)\n", vector.x, vector.y);
-    return vector;
-}
 
 
 void kick_ball() {
   printf("Kicking ball\n");
   BT_drive(MOTOR_A, MOTOR_D, 100);
   usleep(10000);
-  BT_all_stop();
+  BT_all_stop(0);
 }
 
 
