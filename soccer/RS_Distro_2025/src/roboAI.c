@@ -794,8 +794,8 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
 **********************************************************************************/
 
 
-// steps for penalty kick mode
-// 1. calculate the pathing needed to reach the ball (maybe an array of a tuples that is distance + heading)
+// PENALTY KICK STUFF
+// 1. calculate the pathing needed to reach the ball (maybe an array of a tuples that is distance + heading) (eyes is doing this part as its for chasing anyways)
 // 2. calculate the shooting angle needed to get the ball within the goal
 //    - find the points for the goal and the bot
 //    - calculate the vector between them with a forward direction
@@ -807,4 +807,97 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
 // 1. Calculate pathing is not a state that is needed as that can be done on the fly assuming we know the bots current heading
 // 2. Calculate shooting angle and the consequent vector is alsos stateless 
 // 3. Enter into moving bot travelling to point state
-// - 
+
+// Gist of state transactions (rename state numbers into the actual groups later)
+// State 1: Initial state, bot not moving
+//          - Calculate shooting vector of the ball to the goal
+//          - Calculate the pathing needed to reach the ball and also take into account the shooting vector so can be factored in pathing (maybe something like an arc)
+//          - Move into next state which is pathing to the point (the ball itself)
+// State 2: Pathing to the ball
+//          - Check if the bot is within the distance to the ball (if so then can enter into the alignment state)
+//          - Recalculate the pathing to the ball needed
+//          - Turn on the motors with some motor power needed on both wheels (same if forward or some ratio if driving in an arc / turning)
+//             - The gyro can be used here as I think the camera refresh rate is not fast enough if turning at full speed
+//          - Store the target angle wanted in a state variable along with the heading before the turn was initiated (if not straight pathing)
+// State 3: Alignment check
+//          - Check what the bots current vector is compared to the shooting vector and our difference around the ball is acceptable
+//          - If the difference is larger than some epsilon then we need to drive around the ball and orient the bot to the shooting vecotr
+//          - NOTE: alignment will look like some point on a circle of x diameter from the ball so we have time to accelerate and bump the ball
+//          - If the difference is small enough then we can enter into the kick state (state 4)
+// State 3.1: Start Distance Alignment
+//          - Get our distance from the ball and either start moving forward or backward to get to the target diameter
+//          - Transition to State 3.2: Distance Alignment
+// State 3.2: Diameter Alignment
+//          - Check if the bot is within the target diameter (if so then transition to state 3.3)
+//          - If not then continue to move forward or backward to get to the target diameter
+// State 3.3: Circumference Positioning
+//          - Check if the bot is aligned to start driving along the circumference of the circle we have around the ball
+//          - If not then start a turn then transition to state 3.4: Vector Positioning
+// State 3.4: Circumference Alignment Positioning
+//          - Check if the bot is aligned along the circumference of the circle we have around the ball
+//          - If so then transitions to state 3.5: Circumference Positioning and start driving in an arc around the ball
+// State 3.5: Circumference Positioning
+//          - Check if the bot is close enough to a point along the shooting vector
+//          - If so then transition to state 3.6: Final Shooting Check
+// State 3.6: Final Shooting Check
+//          - Check if the bot has:
+//            - Good diameter around the ball
+//            - Good alignment with the shooting vector
+//          - If so then transitions to state 3.7 and full send motors with max power
+//          - else restart the alignment process by transitioning to state 3.1
+// State 4: Kick state
+//          - Check if the ball has moved since its last known location by some epsilon (2 norm?)
+//          - If not then continue to drive straight
+//          - If so then transition to state 5: Goal state
+// State 5: Goal state
+//          - Celebrate or something cause if you missing the goal then rip lmao
+
+
+// This helper calculates the vector between the ball and the goal with the goal being the forward direction
+// Returns: 1 on success, 0 on failure (if ball position not available)
+// Output parameters: goal_x, goal_y - goal center coordinates
+//                    vec_x, vec_y - normalized vector from ball to goal
+int calculateShootingVector(struct RoboAI *ai, double *goal_x, double *goal_y, double *vec_x, double *vec_y) {
+    // Check if ball position is available
+    if (ai->st.ball == NULL || ai->st.ballID == 0) {
+        // Ball position not available, return failure as we can't calculate a shooting vector
+        return 0;
+    }
+    
+    // Get ball's current position
+    double ball_x = ai->st.ball->cx;
+    double ball_y = ai->st.ball->cy;
+    
+    // Determine goal position based on which side we're on
+    // side=0: bot's own side is left, goal to score on is on the right (x = sx)
+    // side=1: bot's own side is right, goal to score on is on the left (x = 0)
+    // Goal center is at the middle of the field vertically (y = sy/2)
+    if (ai->st.side == 0) {
+        // Left side bot, goal is on the right
+        *goal_x = sx - 1;
+    } else {
+        // Right side bot, goal is on the left
+        *goal_x = 0;
+    }
+
+    // Assumption that the goal is in the middle of the field vertically
+    *goal_y = sy / 2.0;
+    
+    // Calculate vector from ball to goal
+    double dx = *goal_x - ball_x;
+    double dy = *goal_y - ball_y;
+    
+    // Normalize the vector
+    double magnitude = sqrt(dx * dx + dy * dy);
+    if (magnitude < 1e-6) {
+        // Ball is already at goal (shouldn't happen, but handle it)
+        *vec_x = 0;
+        *vec_y = 0;
+        return 0;
+    }
+    
+    *vec_x = dx / magnitude;
+    *vec_y = dy / magnitude;
+    
+    return 1;
+}

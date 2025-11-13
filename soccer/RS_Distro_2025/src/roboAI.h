@@ -151,4 +151,15 @@ struct displayList *clearDP(struct displayList *head);
    playing functionality below.
 *****************************************************************************/
 
+// Penalty kick mode helper functions
+/**
+ * Calculate the shooting vector from ball to goal
+ * 
+ * Calculates the normalized vector from the ball's current position to the goal
+ * center. The goal position is determined based on which side the bot is on.
+ * 
+ * Return 1 on success, 0 on failure (if ball position not available)
+ */
+int calculateShootingVector(struct RoboAI *ai, double *goal_x, double *goal_y, double *vec_x, double *vec_y);
+
 #endif
