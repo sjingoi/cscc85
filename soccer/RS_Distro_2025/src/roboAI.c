@@ -799,6 +799,12 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
       // Code to align to the target point based off heading
       // Calculate the vector of the bot to the target point
       // Motors are started to driving forward here then we transition to state 102
+      {
+        int aligned = turn_towards_dir(ai, ai->st.targetPointVectorX, ai->st.targetPointVectorY);
+        if (aligned) {
+          ai->st.state = 102;
+        }
+      }
       break;
     case 102:
       // Code to drive to that point until we are within epsilon

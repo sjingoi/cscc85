@@ -172,5 +172,5 @@ int calculateShootingVector(struct RoboAI *ai, double *goal_x, double *goal_y, d
 int calculateGoalPosition(struct RoboAI *ai, double *goal_x, double *goal_y);
 int calculateTargetPointVector(struct RoboAI *ai, double *targetPointX, double *targetPointY, double *vectorX, double *vectorY);
 void chase_ball(struct RoboAI *ai, struct blob *blobs);
-
+int turn_towards_dir(struct RoboAI *ai, double t_dir_x, double t_dir_y);
 #endif
