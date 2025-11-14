@@ -803,21 +803,32 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
         int aligned = turn_towards_dir(ai, ai->st.targetPointVectorX, ai->st.targetPointVectorY);
         if (aligned) {
           ai->st.state = 102;
+          move_forward(30);
         }
       }
       break;
     case 102:
       // Code to drive to that point until we are within epsilon
       // Motors are stopped once we are within epsilon of the point and initiate a turn then transition to state 103
+      int at_target = calculatePointsWithinEpsilon(ai->st.self->cx, ai->st.self->cy, ai->st.targetPointX, ai->st.targetPointY, 10);
+      if (at_target) {
+        ai->st.state = 103;
+        BT_all_stop(0);
+      }
       break;
     case 103: 
       // Code to align to the heading of the goal based off the shooting vector
       // Check if we are aligned along the shooting vector
       // If aligned stop motors and transition to state 104
-
+      int aligned = turn_towards_dir(ai, ai->st.shootingVectorX, ai->st.shootingVectorY);
+      if (aligned) {
+        ai->st.state = 104;
+        BT_all_stop(0);
+      }
       break;
     case 104:
       // Code to kick the ball
+      BT_drive(MOTOR_A, MOTOR_D, 100);
       break;
   }
 
