@@ -837,9 +837,31 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
   *****************************************************************************/
 //  fprintf(stderr,"Just trackin'!\n");	// bot, opponent, and ball.
 //  track_agents(ai,blobs);		// Currently, does nothing but endlessly track
- }
+// Update blob tracking for this frame
+    track_agents(ai, blobs);
+
+    // if (ai->st.state < 100) {
+    // } else if (ai->st.state < 200) {
+    //   switch(ai->st.state) {
+    //     case 101: // Initial state, bot not moving
+
+    //       break;
+    //     case 102: // Pathing to the ball
+    //       break;
+    //     case 103: // Alignment check
+    //       break;
+    //     case 104: // Kick state
+    //       break;
+    //     case 105: // Goal state
+    //   }
+
+    // } else if (ai->st.state < 300) {
+    chase_ball(ai, blobs); 
+//  }
+}
 
 }
+
 
 /**********************************************************************************
  TO DO:
@@ -855,6 +877,157 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
  there.
 **********************************************************************************/
 
+// Coordinate detectGoalPosition() {
+//     printf("Detecting goal position...\n");
+//     Coordinate goal = {100, 0}; // dummy
+//     return goal;
+// }
+
+// Coordinate detectBallPosition() {
+//     printf("Detecting ball position...\n");
+//     Coordinate ball = {50, 0}; // dummy
+//     return ball;
+// }
+
+// Coordinate computeCoordinates(Coordinate ball, Coordinate goal) {
+//     Coordinate vector;
+//     vector.x = goal.x - ball.x;
+//     vector.y = goal.y - ball.y;
+//     printf("Computed path: (%d, %d)\n", vector.x, vector.y);
+//     return vector;
+// }
+
+void normalize_vector(double *x, double *y) {
+    double mag = sqrt((*x)*(*x) + (*y)*(*y));
+    if (mag > 1e-6) { *x /= mag; *y /= mag; }
+}
+
+void move_forward(int pw) {
+    BT_drive(MOTOR_A, MOTOR_D, pw);
+}
+
+void turn_left(int pw) {
+    BT_turn(MOTOR_A, -pw, MOTOR_D, pw);
+}
+
+void turn_right(int pw) {
+    BT_turn(MOTOR_A, pw, MOTOR_D, -pw);
+}
+
+int turn_towards_dir(struct RoboAI *ai, double t_dir_x, double t_dir_y) {
+
+  struct blob *my_bot = ai->st.self;
+  double sx = my_bot->dx;
+  double sy = my_bot->dy;
+  double theta_th = 0.85;      // cos(angle threshold)
+  int turn_pw     = 30;
+
+  normalize_vector(&t_dir_x, &t_dir_y);
+  normalize_vector(&sx, &sy);
+
+  double c_theta = t_dir_x * sx + t_dir_y * sy;
+
+  if (c_theta < 0) {
+    fprintf(stderr, "[201] Facing away, turn 180.\n");
+    turn_right(50);
+    return 0; // Not aligned
+  }
+
+  if (c_theta < theta_th) {
+    double cross = sx * t_dir_x - sy * t_dir_y;
+    if (cross < 0) {
+        fprintf(stderr, "[201] Turning left toward ball.\n");
+        turn_left(turn_pw);
+    } else {
+        fprintf(stderr, "[201] Turning right toward ball.\n");
+        turn_right(turn_pw);
+    }
+    return 0; // Not aligned
+  } else {
+    return 1; // Aligned
+  }
+}
+
+#define DRIVE_SPEED     20       // forward speed
+#define TURN_SPEED      30       // turning speed
+#define ANGLE_THRESHOLD 0.5      // radians (~5-6 degrees)
+#define DIST_THRESHOLD  10       // pixels
+void chase_ball(struct RoboAI *ai, struct blob *blobs)
+{
+    struct blob *my_bot = ai->st.self;
+    struct blob *ball = ai->st.ball;
+
+    if (!my_bot || !ball) {
+        BT_all_stop(0);
+        return;
+    }
+
+    // Parameters
+    double theta_th = 0.85;      // cos(angle threshold)
+    double dis_th   = 200;       // distance threshold
+    int drive_pw    = 30;
+
+    // --- Ball/self vectors
+    double bx = ball->cx - my_bot->cx;
+    double by = ball->cy - my_bot->cy;
+    double sx = my_bot->dx;
+    double sy = my_bot->dy;
+
+    normalize_vector(&bx, &by);
+    normalize_vector(&sx, &sy);
+
+    double c_theta = bx * sx + by * sy;
+    double dist = sqrt((ball->cx - my_bot->cx)*(ball->cx - my_bot->cx) +
+                       (ball->cy - my_bot->cy)*(ball->cy - my_bot->cy));
+
+    // FSM for chase states 201-299
+    switch(ai->st.state) {
+        case 201:  // Turn toward the ball
+            if (dist < dis_th) {
+                fprintf(stderr, "[201] Ball reached! Switching to kick.\n");
+                ai->st.state = 221;
+                return;
+            }
+
+            {
+              int aligned = turn_towards_dir(ai, bx, by);
+  
+              if (aligned) {
+                fprintf(stderr, "[201] Facing ball, start driving.\n");
+                ai->st.state = 211;
+              }
+            }
+            break;
+
+        case 211:  // Drive toward the ball
+            if (dist < dis_th) {
+                fprintf(stderr, "[211] Reached ball! Switching to kick.\n");
+                ai->st.state = 221;
+                return;
+            }
+
+            if (c_theta < theta_th) {
+                fprintf(stderr, "[211] Angle off, turn toward ball.\n");
+                ai->st.state = 201;
+                return;
+            }
+
+            fprintf(stderr, "[211] Driving forward toward ball.\n");
+            move_forward(drive_pw);
+            break;
+
+        case 221:  // Reached ball / Kick
+            fprintf(stderr, "[221] Ball reached, perform kick.\n");
+            move_forward(100);   // simulate kick
+            ai->st.state = 201;  // reset to chase initial
+            break;
+
+        default:
+            fprintf(stderr, "[CHASE] Unknown state %d, default to 201.\n", ai->st.state);
+            ai->st.state = 201;
+            break;
+    }
+}
 
 // PENALTY KICK STUFF
 
@@ -968,7 +1141,7 @@ int calculateShootingVector(struct RoboAI *ai, double *goal_x, double *goal_y, d
 }
 
 // Calculate the vector form from the bot to a target point
-int calculateTargetPointVector(double *targetPointX, double *targetPointY, double *vectorX, double *vectorY) {
+int calculateTargetPointVector(struct RoboAI *ai, double *targetPointX, double *targetPointY, double *vectorX, double *vectorY) {
   double dx = *targetPointX - ai->st.self->cx;
   double dy = *targetPointY - ai->st.self->cy;
   // Normalize the vector

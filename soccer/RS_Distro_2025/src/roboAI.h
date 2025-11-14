@@ -90,6 +90,7 @@ struct AI_data{
 	
 	// Target point for positioning before kick (x distance behind the ball along shooting vector)
 	double targetPointX, targetPointY;
+	double targetPointVectorX, targetPointVectorY; 
 };
 
 struct RoboAI {
@@ -168,5 +169,8 @@ struct displayList *clearDP(struct displayList *head);
  * Return 1 on success, 0 on failure (if ball position not available)
  */
 int calculateShootingVector(struct RoboAI *ai, double *goal_x, double *goal_y, double *vec_x, double *vec_y);
+int calculateGoalPosition(struct RoboAI *ai, double *goal_x, double *goal_y);
+int calculateTargetPointVector(struct RoboAI *ai, double *targetPointX, double *targetPointY, double *vectorX, double *vectorY);
+void chase_ball(struct RoboAI *ai, struct blob *blobs);
 
 #endif
