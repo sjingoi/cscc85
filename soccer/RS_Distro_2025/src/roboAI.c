@@ -1102,31 +1102,64 @@ int calculateWheelSpeedRatio(double *arcDiameter, double *ratio) {
   return 1;
 }
 
-void drive_arc_toward(double dx, double dy, double target_dx, double target_dy,
-                      double base_speed, double B)
-{
-    // Normalize
-    normalize_v(&dx, &dy);
-    normalize_v(&target_dx, &target_dy);
+// PID controller for tangent around ball
+void drive_arc_around_ball(struct RoboAI *ai, struct blob *ball, double target_diameter, double forward_pw) {
+    if (!ai->st.self || !ball) return;
 
-    // Signed angle using cross and dot
-    double dot  = dx*target_dx + dy*target_dy;
-    double cross = dx*target_dy - dy*target_dx;
+    // Get current positions
+    double bx = ball->cx;
+    double by = ball->cy;
+    double sx = ai->st.self->cx;
+    double sy = ai->st.self->cy;
 
-    // Angle error = signed rotation needed
-    double angle = atan2(cross, dot);  // radians
+    // Vector from ball to self
+    double dx = sx - bx;
+    double dy = sy - by;
+    double dist = sqrt(dx*dx + dy*dy);
 
-    // Convert angle to turn radius:
-    // R = K / angle
-    double K = 300.0;   // tuning constant
-    double R = K / angle;
+    // Desired radius (circle radius)
+    double r = target_diameter / 2.0;
 
-    // Avoid infinity
-    if (fabs(angle) < 0.01)
-        R = 10000;
+    // Tangent vector (perpendicular to radius)
+    // Cross product sign decides clockwise or counter-clockwise orbit
+    double tangent_x = -dy;
+    double tangent_y = dx;
+    double tangent_mag = sqrt(tangent_x*tangent_x + tangent_y*tangent_y);
+    tangent_x /= tangent_mag;
+    tangent_y /= tangent_mag;
 
-    int dir = (angle > 0 ? +1 : -1);
+    // Current heading vector
+    double hd_x = ai->st.sdx;
+    double hd_y = ai->st.sdy;
+    double hd_mag = sqrt(hd_x*hd_x + hd_y*hd_y);
+    hd_x /= hd_mag;
+    hd_y /= hd_mag;
 
-    drive_arc(fabs(R), base_speed, dir, B);
+    // PID steering
+    double cross = hd_x*tangent_y - hd_y*tangent_x;
+
+    // Controller
+    double Kp = 50.0;  // adjust gain to tune turning speed
+    int turn_pw = (int)(Kp * cross);
+
+    // Forward power constant
+    int drive_pw = (int)forward_pw;
+
+    // Send motor commands
+    BT_drive(MOTOR_A, MOTOR_D, drive_pw);
+    if (turn_pw > 0) {
+        BT_turn(MOTOR_A, drive_pw-turn_pw, MOTOR_D, drive_pw+turn_pw);
+    } else {
+        BT_turn(MOTOR_A, drive_pw+turn_pw, MOTOR_D, drive_pw-turn_pw);
+    }
+
+    // Optional: adjust distance to maintain exact radius
+    double dist_error = dist - r;
+    double Kd = 0.5; // small correction factor
+    if (fabs(dist_error) > 5.0) {
+        // move forward/backward slightly to correct radius
+        int adjust_pw = (int)(Kd * dist_error);
+        BT_drive(MOTOR_A, MOTOR_D, drive_pw - adjust_pw);
+    }
 }
 
