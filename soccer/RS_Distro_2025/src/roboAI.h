@@ -169,8 +169,10 @@ struct displayList *clearDP(struct displayList *head);
  * Return 1 on success, 0 on failure (if ball position not available)
  */
 int calculateShootingVector(struct RoboAI *ai, double *goal_x, double *goal_y, double *vec_x, double *vec_y);
+int calculatePointsWithinEpsilon(double *x1, double *y1, double *x2, double *y2, double epsilon);
 int calculateGoalPosition(struct RoboAI *ai, double *goal_x, double *goal_y);
 int calculateTargetPointVector(struct RoboAI *ai, double *targetPointX, double *targetPointY, double *vectorX, double *vectorY);
 void chase_ball(struct RoboAI *ai, struct blob *blobs);
 int turn_towards_dir(struct RoboAI *ai, double t_dir_x, double t_dir_y);
+double f_angle(double x1, double y1, double x2, double y2);
 #endif

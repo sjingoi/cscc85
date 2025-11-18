@@ -32,9 +32,11 @@
 extern int sx;              // Get access to the image size from the imageCapture module
 extern int sy;
 int laggy=0;
+double fix_dx, fix_dy;
+double o_dx, o_dy;
 
 // Distance from ball to position bot for kick (in pixels) we can update this later
-#define KICK_POSITION_DISTANCE 80.0
+#define KICK_POSITION_DISTANCE 200.0
 
 /**************************************************************
  * Display List Management
@@ -618,6 +620,24 @@ void AI_calibrate(struct RoboAI *ai, struct blob *blobs)
 }
 
 
+void normalize_vector(double *x, double *y) {
+    double mag = sqrt((*x)*(*x) + (*y)*(*y));
+    if (mag > 1e-6) { *x /= mag; *y /= mag; }
+}
+
+void move_forward(int pw) {
+    BT_drive(MOTOR_A, MOTOR_D, pw);
+}
+
+void turn_left(int pw) {
+    BT_turn(MOTOR_A, -pw, MOTOR_D, pw);
+}
+
+void turn_right(int pw) {
+    BT_turn(MOTOR_A, pw, MOTOR_D, -pw);
+}
+
+
 /**************************************************************************
  * AI state machine - this is where you will implement your soccer
  * playing logic
@@ -758,79 +778,7 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
  }
  else
  {
-  switch (ai->st.state) {
-    // State 100: Set initial data to start off the penalty kick
-    case 100:
-      // Sets the shooting vector of the ball to the goal (lets just assume that it will not fail right now)
-      {
-        double goal_x, goal_y;
-        calculateGoalPosition(ai, &goal_x, &goal_y);
-
-        if (calculateShootingVector(ai, &goal_x, &goal_y, &ai->st.shootingVectorX, &ai->st.shootingVectorY)) {
-          // Set the vector needed for the bot to reach a target point that is x distance from the ball
-          // Using the shooting vector, extend x distance from the ball in the OPPOSITE direction of the shooting vector
-          // (behind the ball) so the bot can approach and kick the ball forward
-          if (ai->st.ball != NULL && ai->st.ballID == 1) {
-            // Get ball position
-            double ball_x = ai->st.ball->cx;
-            double ball_y = ai->st.ball->cy;
-            
-            // Calculate target point: ball position - (shooting_vector * distance)
-            // The shooting vector points from ball to goal, so we go opposite to be behind the ball
-            ai->st.targetPointX = ball_x - (ai->st.shootingVectorX * KICK_POSITION_DISTANCE);
-            ai->st.targetPointY = ball_y - (ai->st.shootingVectorY * KICK_POSITION_DISTANCE);
-
-            // calculate the vector of the bot to the target point
-            calculateTargetPointVector(ai, &ai->st.targetPointX, &ai->st.targetPointY, &ai->st.targetPointVectorX, &ai->st.targetPointVectorY);
-          }
-        }
-      }
-      
-      // We now have:
-      // - The shooting vector of the ball to the goal
-      // - The target point for the bot to reach
-      // - The vector of the bot to the target point
-      
-      // Transition to state 101: Pathing to the target point
-      ai->st.state = 101;
-      break;
-
-    case 101:
-      // Code to align to the target point based off heading
-      // Calculate the vector of the bot to the target point
-      // Motors are started to driving forward here then we transition to state 102
-      {
-        int aligned = turn_towards_dir(ai, ai->st.targetPointVectorX, ai->st.targetPointVectorY);
-        if (aligned) {
-          ai->st.state = 102;
-          move_forward(30);
-        }
-      }
-      break;
-    case 102:
-      // Code to drive to that point until we are within epsilon
-      // Motors are stopped once we are within epsilon of the point and initiate a turn then transition to state 103
-      int at_target = calculatePointsWithinEpsilon(ai->st.self->cx, ai->st.self->cy, ai->st.targetPointX, ai->st.targetPointY, 10);
-      if (at_target) {
-        ai->st.state = 103;
-        BT_all_stop(0);
-      }
-      break;
-    case 103: 
-      // Code to align to the heading of the goal based off the shooting vector
-      // Check if we are aligned along the shooting vector
-      // If aligned stop motors and transition to state 104
-      int aligned = turn_towards_dir(ai, ai->st.shootingVectorX, ai->st.shootingVectorY);
-      if (aligned) {
-        ai->st.state = 104;
-        BT_all_stop(0);
-      }
-      break;
-    case 104:
-      // Code to kick the ball
-      BT_drive(MOTOR_A, MOTOR_D, 100);
-      break;
-  }
+  
 
 
 
@@ -857,26 +805,150 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
 // Update blob tracking for this frame
     track_agents(ai, blobs);
 
-    // if (ai->st.state < 100) {
-    // } else if (ai->st.state < 200) {
-    //   switch(ai->st.state) {
-    //     case 101: // Initial state, bot not moving
+    // --- Stabilize robot heading vector ---
 
-    //       break;
-    //     case 102: // Pathing to the ball
-    //       break;
-    //     case 103: // Alignment check
-    //       break;
-    //     case 104: // Kick state
-    //       break;
-    //     case 105: // Goal state
-    //   }
+    double ndx = ai->st.self->dx;
+    double ndy = ai->st.self->dy;
 
-    // } else if (ai->st.state < 300) {
-    chase_ball(ai, blobs); 
+    // Normalize new heading
+    double mag = sqrt(ndx*ndx + ndy*ndy);
+    if (mag > 1e-6) { ndx /= mag; ndy /= mag; }
+
+    // Old stabilized heading
+    double odx = old_dx;
+    double ody = old_dy;
+
+    // Motion vector
+    double mx = ai->st.self->mx;
+    double my = ai->st.self->my;
+
+    // Compare new heading to old stabilized heading
+    double a1 = fabs(f_angle(odx, ody, ndx, ndy));
+
+    // Compare new heading to motion direction
+    double a2 = fabs(f_angle(mx, my, ndx, ndy));
+
+    if (a1 < 1.0 && a2 < 1.0) {
+        // New dx/dy is consistent → accept it
+        fix_dx = ndx;
+        fix_dy = ndy;
+    } else {
+        // New dx/dy flipped 180° → invert it
+        printf("Fix angle");
+        fix_dx = -ndx;
+        fix_dy = -ndy;
+    }
+
+    // Save stabilized direction
+    ai->st.sdx = fix_dx;
+    ai->st.sdy = fix_dy;
+
+    old_dx = fix_dx;
+    old_dy = fix_dy;
+
+    if (ai->st.state < 100) {
+      printf("Soccer state");
+    } else if (ai->st.state < 200) {
+      switch(ai->st.state) {
+        printf("Penalty state");
+        case 101:
+        // Sets the shooting vector of the ball to the goal (lets just assume that it will not fail right now)
+        {
+          double goal_x, goal_y;
+          calculateGoalPosition(ai, &goal_x, &goal_y);
+
+          if (calculateShootingVector(ai, &goal_x, &goal_y, &ai->st.shootingVectorX, &ai->st.shootingVectorY)) {
+            // Set the vector needed for the bot to reach a target point that is x distance from the ball
+            // Using the shooting vector, extend x distance from the ball in the OPPOSITE direction of the shooting vector
+            // (behind the ball) so the bot can approach and kick the ball forward
+            if (ai->st.ball != NULL && ai->st.ballID == 1) {
+              // Get ball position
+              double ball_x = ai->st.ball->cx;
+              double ball_y = ai->st.ball->cy;
+              
+              // Calculate target point: ball position - (shooting_vector * distance)
+              // The shooting vector points from ball to goal, so we go opposite to be behind the ball
+              ai->st.targetPointX = ball_x - (ai->st.shootingVectorX * KICK_POSITION_DISTANCE);
+              ai->st.targetPointY = ball_y - (ai->st.shootingVectorY * KICK_POSITION_DISTANCE);
+
+              // calculate the vector of the bot to the target point
+              calculateTargetPointVector(ai, &ai->st.targetPointX, &ai->st.targetPointY, &ai->st.targetPointVectorX, &ai->st.targetPointVectorY);
+            }
+          }
+        }
+        
+        // We now have:
+        // - The shooting vector of the ball to the goal
+        // - The target point for the bot to reach
+        // - The vector of the bot to the target point
+        
+        // Transition to state 102: Pathing to the target point
+        ai->st.state = 102;
+        break;
+
+      case 102:
+        // Code to align to the target point based off heading
+        // Calculate the vector of the bot to the target point
+        // Motors are started to driving forward here then we transition to state 103
+        {
+          int aligned = turn_towards_dir(ai, ai->st.targetPointVectorX, ai->st.targetPointVectorY);
+          if (aligned) {
+            ai->st.state = 103;
+            move_forward(30);
+          }
+        }
+        break;
+      case 103:
+      {
+        // Double check the heading is alright and go back to state 102 if we are too far off
+        int aligned = turn_towards_dir(ai, ai->st.targetPointVectorX, ai->st.targetPointVectorY);
+        if (!aligned) {
+          printf("Going back to 102 bc we arent aligned\n");
+          ai->st.state = 102;
+        }
+        BT_all_stop(0);
+
+
+        // Code to drive to that point until we are within epsilon
+        // Motors are stopped once we are within epsilon of the point and initiate a turn then transition to state 104
+        int at_target = calculatePointsWithinEpsilon(&ai->st.self->cx, &ai->st.self->cy, &ai->st.targetPointX, &ai->st.targetPointY, 100);
+        if (at_target) {
+          ai->st.state = 104;
+          BT_all_stop(0);
+        }
+      }
+        break;
+      case 104: 
+      {
+        // Code to align to the heading of the goal based off the shooting vector
+        // Check if we are aligned along the shooting vector
+        // If aligned stop motors and transition to state 105
+        printf("Turning...\n");
+        int aligned = turn_towards_dir(ai, ai->st.shootingVectorX, ai->st.shootingVectorY);
+        printf("Aligned: %d\n", aligned);
+        if (aligned) {
+          ai->st.state = 105;
+          BT_all_stop(0);
+        }
+
+      }
+        break;
+      case 105:
+        // Code to kick the ball
+        BT_drive(MOTOR_A, MOTOR_D, 100);
+        usleep(1000000);
+        BT_all_stop(0);
+        break;
+    }
+    } else if (ai->st.state < 300) {
+      printf("Chase ball\n");
+      chase_ball(ai, blobs);
+    }
+
+  printf("CURRENT STATE: %d\n", ai->st.state);
+
 //  }
 }
-
 }
 
 
@@ -914,22 +986,18 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
 //     return vector;
 // }
 
-void normalize_vector(double *x, double *y) {
-    double mag = sqrt((*x)*(*x) + (*y)*(*y));
-    if (mag > 1e-6) { *x /= mag; *y /= mag; }
+double fix_dir(struct RoboAI *ai, struct blob *blobs) 
+{
+
 }
 
-void move_forward(int pw) {
-    BT_drive(MOTOR_A, MOTOR_D, pw);
+double f_angle(double x1, double y1, double x2, double y2)
+{
+  double angle = atan2(x1*y2 - x2*y1, x1*x2 + y1*y2);
+  printf("Angle: %f\n", angle);
+  return angle;
 }
 
-void turn_left(int pw) {
-    BT_turn(MOTOR_A, -pw, MOTOR_D, pw);
-}
-
-void turn_right(int pw) {
-    BT_turn(MOTOR_A, pw, MOTOR_D, -pw);
-}
 
 int turn_towards_dir(struct RoboAI *ai, double t_dir_x, double t_dir_y) {
 
@@ -953,10 +1021,8 @@ int turn_towards_dir(struct RoboAI *ai, double t_dir_x, double t_dir_y) {
   if (c_theta < theta_th) {
     double cross = sx * t_dir_x - sy * t_dir_y;
     if (cross < 0) {
-        fprintf(stderr, "[201] Turning left toward ball.\n");
         turn_left(turn_pw);
     } else {
-        fprintf(stderr, "[201] Turning right toward ball.\n");
         turn_right(turn_pw);
     }
     return 0; // Not aligned
@@ -969,12 +1035,22 @@ int turn_towards_dir(struct RoboAI *ai, double t_dir_x, double t_dir_y) {
 #define TURN_SPEED      30       // turning speed
 #define ANGLE_THRESHOLD 0.5      // radians (~5-6 degrees)
 #define DIST_THRESHOLD  10       // pixels
+
 void chase_ball(struct RoboAI *ai, struct blob *blobs)
 {
+
     struct blob *my_bot = ai->st.self;
     struct blob *ball = ai->st.ball;
 
     if (!my_bot || !ball) {
+      printf("All stop.\n");
+      if (!my_bot) {
+        printf("No bot.\n");
+      }
+      else {
+        printf("No ball.\n");
+
+      }
         BT_all_stop(0);
         return;
     }
@@ -983,12 +1059,13 @@ void chase_ball(struct RoboAI *ai, struct blob *blobs)
     double theta_th = 0.85;      // cos(angle threshold)
     double dis_th   = 200;       // distance threshold
     int drive_pw    = 30;
+    int turn_pw     = 30;
 
     // --- Ball/self vectors
     double bx = ball->cx - my_bot->cx;
     double by = ball->cy - my_bot->cy;
-    double sx = my_bot->dx;
-    double sy = my_bot->dy;
+    double sx = fix_dx;
+    double sy = fix_dy;
 
     normalize_vector(&bx, &by);
     normalize_vector(&sx, &sy);
@@ -1000,19 +1077,31 @@ void chase_ball(struct RoboAI *ai, struct blob *blobs)
     // FSM for chase states 201-299
     switch(ai->st.state) {
         case 201:  // Turn toward the ball
+        printf("Here.\n");
             if (dist < dis_th) {
                 fprintf(stderr, "[201] Ball reached! Switching to kick.\n");
                 ai->st.state = 221;
                 return;
             }
 
-            {
-              int aligned = turn_towards_dir(ai, bx, by);
-  
-              if (aligned) {
+            if (c_theta < 0) {
+                fprintf(stderr, "[201] Facing away, turn 180.\n");
+                turn_right(50);
+                return;
+            }
+
+            if (c_theta < theta_th) {
+                double cross = sx * by - sy * bx;
+                if (cross < 0) {
+                    fprintf(stderr, "[201] Turning left toward ball.\n");
+                    turn_left(turn_pw);
+                } else {
+                    fprintf(stderr, "[201] Turning right toward ball.\n");
+                    turn_right(turn_pw);
+                }
+            } else {
                 fprintf(stderr, "[201] Facing ball, start driving.\n");
                 ai->st.state = 211;
-              }
             }
             break;
 
@@ -1173,6 +1262,7 @@ int calculateTargetPointVector(struct RoboAI *ai, double *targetPointX, double *
 int calculatePointsWithinEpsilon(double *x1, double *y1, double *x2, double *y2, double epsilon) {
     // Calculate the distance between the two points with 2 norm
     double distance = sqrt(pow(*x1 - *x2, 2) + pow(*y1 - *y2, 2));
+    printf("Distance: %f\n", distance);
     // Check if the distance is within the epsilon
     if (distance <= epsilon) {
         return 1;
