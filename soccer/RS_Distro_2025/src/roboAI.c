@@ -1033,7 +1033,7 @@ int turn_towards_dir(struct RoboAI *ai, double t_dir_x, double t_dir_y) {
 
 #define DRIVE_SPEED     20       // forward speed
 #define TURN_SPEED      30       // turning speed
-#define ANGLE_THRESHOLD 0.5      // radians (~5-6 degrees)
+#define ANGLE_THRESHOLD 0.3      // radians (~5-6 degrees)
 #define DIST_THRESHOLD  10       // pixels
 
 void chase_ball(struct RoboAI *ai, struct blob *blobs)
