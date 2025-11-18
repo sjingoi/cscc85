@@ -778,6 +778,37 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
 // Update blob tracking for this frame
     track_agents(ai, blobs);
 
+    // --- Stabilize robot heading vector (prevent PCA flip) ---
+    double ndx = ai->st.self->dx;
+    double ndy = ai->st.self->dy;
+
+    // Normalize the new PCA heading
+    double mag = sqrt(ndx*ndx + ndy*ndy);
+    if (mag > 1e-6) { 
+        ndx /= mag; 
+        ndy /= mag; 
+    }
+
+    // Old stable heading
+    double odx = ai->st.sdx;
+    double ody = ai->st.sdy;
+
+    // Dot product test
+    double dot = ndx*odx + ndy*ody;
+
+    // If PCA flipped 180°, fix BOTH raw and stable vectors
+    if (dot < 0) {
+        ndx = -ndx;
+        ndy = -ndy;
+
+        ai->st.self->dx *= -1;   // <-- important: stabilize PCA for next frame
+        ai->st.self->dy *= -1;
+    }
+
+    // Store corrected stable heading
+    ai->st.sdx = ndx;
+    ai->st.sdy = ndy;
+
     if (ai->st.state < 100) {
     } else if (ai->st.state < 200) {
       switch(ai->st.state) {
@@ -856,6 +887,7 @@ void turn_right(int pw) {
 #define TURN_SPEED      30       // turning speed
 #define ANGLE_THRESHOLD 0.5      // radians (~5-6 degrees)
 #define DIST_THRESHOLD  10       // pixels
+
 void chase_ball(struct RoboAI *ai, struct blob *blobs)
 {
     struct blob *my_bot = ai->st.self;
@@ -1068,5 +1100,33 @@ int calculateHeadingDifference(double *heading1, double *heading2, double epsilo
 int calculateWheelSpeedRatio(double *arcDiameter, double *ratio) {
   // lets trial and error how much torque the wheels have before we fill this out 
   return 1;
+}
+
+void drive_arc_toward(double dx, double dy, double target_dx, double target_dy,
+                      double base_speed, double B)
+{
+    // Normalize
+    normalize_v(&dx, &dy);
+    normalize_v(&target_dx, &target_dy);
+
+    // Signed angle using cross and dot
+    double dot  = dx*target_dx + dy*target_dy;
+    double cross = dx*target_dy - dy*target_dx;
+
+    // Angle error = signed rotation needed
+    double angle = atan2(cross, dot);  // radians
+
+    // Convert angle to turn radius:
+    // R = K / angle
+    double K = 300.0;   // tuning constant
+    double R = K / angle;
+
+    // Avoid infinity
+    if (fabs(angle) < 0.01)
+        R = 10000;
+
+    int dir = (angle > 0 ? +1 : -1);
+
+    drive_arc(fabs(R), base_speed, dir, B);
 }
 
