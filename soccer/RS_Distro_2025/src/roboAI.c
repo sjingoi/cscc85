@@ -1057,9 +1057,9 @@ void chase_ball(struct RoboAI *ai, struct blob *blobs)
 
     // Parameters
     double theta_th = 0.85;      // cos(angle threshold)
-    double dis_th   = 200;       // distance threshold
-    int drive_pw    = 30;
-    int turn_pw     = 30;
+    double dis_th   = 150;       // distance threshold
+    int drive_pw    = 25;
+    int turn_pw     = 25;
 
     // --- Ball/self vectors
     double bx = ball->cx - my_bot->cx;
