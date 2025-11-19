@@ -1,5 +1,5 @@
-roboAI.o: roboAI.c /usr/include/stdc-predef.h roboAI.h \
- imagecapture/imageCapture.h imagecapture/imageProc.h \
+roboControl.o: roboControl.c /usr/include/stdc-predef.h roboControl.h \
+ roboAI.h imagecapture/imageCapture.h imagecapture/imageProc.h \
  /usr/include/stdio.h \
  /usr/include/x86_64-linux-gnu/bits/libc-header-start.h \
  /usr/include/features.h /usr/include/features-time64.h \
@@ -241,8 +241,9 @@ roboAI.o: roboAI.c /usr/include/stdc-predef.h roboAI.h \
  /usr/include/bluetooth/rfcomm.h API/bytecodes.h API/c_com.h \
  /usr/include/dirent.h /usr/include/x86_64-linux-gnu/bits/dirent.h \
  /usr/include/x86_64-linux-gnu/bits/dirent_ext.h API/lmstypes.h \
- roboControl.h roboUtils.h pacofuncs.c
+ roboUtils.h
 /usr/include/stdc-predef.h:
+roboControl.h:
 roboAI.h:
 imagecapture/imageCapture.h:
 imagecapture/imageProc.h:
@@ -556,6 +557,4 @@ API/c_com.h:
 /usr/include/x86_64-linux-gnu/bits/dirent.h:
 /usr/include/x86_64-linux-gnu/bits/dirent_ext.h:
 API/lmstypes.h:
-roboControl.h:
 roboUtils.h:
-pacofuncs.c:

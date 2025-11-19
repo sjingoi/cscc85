@@ -192,5 +192,6 @@ struct displayList *clearDP(struct displayList *head);
  * Return 1 on success, 0 on failure (if ball position not available)
  */
 
-void chase_ball(struct RoboAI *ai, struct blob *blobs);
+void clean_heading(struct RoboAI *ai, double *old_dx, double *old_dy);
+double f_angle(double x1, double y1, double x2, double y2);
 #endif
