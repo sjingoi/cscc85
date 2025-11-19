@@ -846,8 +846,56 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
     old_dx = fix_dx;
     old_dy = fix_dy;
 
+    // States on this range are for soccer against the opponent
     if (ai->st.state < 100) {
-      printf("Soccer state");
+      // 0 - 20 are for defence
+      // 21 - 99 are for offence
+      switch(ai->state) {
+        case 1:
+        {
+          // This is the entry into the soccer against opponent
+          // Set up the environment variables
+
+          // COPY THE PENALTY CODE HERE BUT EXTRACT INTO HELPER
+
+          // Always transition to the "go to defence kick position"
+          ai->st.state = 2;
+        }
+        // Go to defence kick position
+        case 2:
+        {
+          // Keep moving until we are within an acceptable region for a defensive kick
+          // Check what the vector of the enemy bot to the goal is
+          // Given that vector get to somepoint that is on that vector while blocking our own goal
+          break;
+        }
+        
+        // This is the moving towards a point along the vector of point behind the bot to the ball
+        case 21:
+        {
+          // Similar implementation to penalty
+          // Keep calculating what a good vector to get the ball into the goal is and move towards
+          // Exit this state once we are along that vector
+          break;
+        }
+
+        // This is re-aligning the bot with the vector of ball to the goal
+        case 22:
+        {
+          // Similar implementation to penalty
+          break;
+        }
+
+        // This is kicking the ball
+        case 23:
+        {
+          // Similar implementation to penalty where we move forward at full speed
+          break;
+        }
+
+      }
+    }
+      
     } else if (ai->st.state < 200) {
       switch(ai->st.state) {
         printf("Penalty state");
@@ -948,7 +996,6 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
   printf("CURRENT STATE: %d\n", ai->st.state);
 
 //  }
-}
 }
 
 
