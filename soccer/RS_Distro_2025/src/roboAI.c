@@ -139,7 +139,7 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
   {				                 // if robot identification is successful.
       
    if (ai->st.self->cx>=512) ai->st.side=1; else ai->st.side=0;         // This sets the side the bot thinks as its own side 0->left, 1->right
-   BT_all_stop(0);
+   stop_moving(ai);
    
    fprintf(stderr,"Self-ID complete. Current position: (%f,%f), current heading: [%f, %f], blob direction=[%f, %f], AI state=%d\n",ai->st.self->cx,ai->st.self->cy,ai->st.smx,ai->st.smy,ai->st.sdx,ai->st.sdy,ai->st.state);
    
@@ -359,7 +359,7 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
           printf("Going back to 102 bc we arent aligned\n");
           ai->st.state = 102;
         }
-        BT_all_stop(0);
+        stop_moving(ai);
 
 
         // Code to drive to that point until we are within epsilon
@@ -367,7 +367,7 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
         int at_target = calculatePointsWithinEpsilon(&ai->st.self->cx, &ai->st.self->cy, &ai->st.targetPointX, &ai->st.targetPointY, 100);
         if (at_target) {
           ai->st.state = 104;
-          BT_all_stop(0);
+          stop_moving(ai);
         }
       }
         break;
@@ -381,7 +381,7 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
         printf("Aligned: %d\n", aligned);
         if (aligned) {
           ai->st.state = 105;
-          BT_all_stop(0);
+          stop_moving(ai);
         }
 
       }
@@ -390,7 +390,7 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
         // Code to kick the ball
         BT_drive(MOTOR_A, MOTOR_D, 100);
         usleep(1000000);
-        BT_all_stop(0);
+        stop_moving(ai);
         break;
       }
     } else if (ai->st.state < 300) {
@@ -468,7 +468,7 @@ void chase_ball(struct RoboAI *ai, struct blob *blobs)
         printf("No ball.\n");
 
       }
-        BT_all_stop(0);
+        stop_moving(ai);
         return;
     }
 

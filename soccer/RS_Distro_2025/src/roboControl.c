@@ -1,7 +1,7 @@
 #include "roboControl.h"
 #include "roboUtils.h"
 
-void turn_radius(int pw, double turn_rad, int dir) {
+void turn_radius(int pw, double turn_rad, int dir, struct RoboAI *ai) {
   double wheel_sep = 12.0;
   double wheel_turn_rad = turn_rad - (wheel_sep / 2);
   double p_outer = 1;
@@ -23,6 +23,11 @@ void move_forward(int pw, struct RoboAI *ai) {
     ai->st.driving_dir = 0;
   }
   BT_drive(MOTOR_A, MOTOR_D, pw);
+}
+
+void stop_moving(struct RoboAI *ai) {
+  ai->st.driving_dir = 0;
+  BT_all_stop(0);
 }
 
 void turn_left(int pw) {

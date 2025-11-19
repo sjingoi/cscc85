@@ -7,6 +7,8 @@ void turn_radius(int pw, double turn_rad, int dir);
 
 void move_forward(int pw, struct RoboAI *ai);
 
+void stop_moving(struct RoboAI *ai);
+
 void turn_left(int pw);
 
 void turn_right(int pw);
