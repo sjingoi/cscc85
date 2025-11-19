@@ -495,11 +495,11 @@ void clean_heading(struct RoboAI *ai, double *old_dx, double *old_dy) {
     double a2 = fabs(f_angle(mx, my, ndx, ndy));
 
     if (a1 < 1.0 && a2 < 1.0) {
-        // New dx/dy is consistent → accept it
+        // New dx/dy is consistent
         fix_dx = ndx;
         fix_dy = ndy;
     } else {
-        // New dx/dy flipped 180° → invert it
+        // New dx/dy flipped 180
         printf("Fix angle");
         fix_dx = -ndx;
         fix_dy = -ndy;
