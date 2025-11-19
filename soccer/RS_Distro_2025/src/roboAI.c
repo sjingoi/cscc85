@@ -35,8 +35,19 @@ int laggy=0;
 double fix_dx, fix_dy;
 double o_dx, o_dy;
 
+// Parameters
+double theta_th = 0.85;      // cos(angle threshold)
+double dis_th   = 150;       // distance threshold
+int drive_pw    = 25;
+int turn_pw     = 25;
+
 // Distance from ball to position bot for kick (in pixels) we can update this later
 #define KICK_POSITION_DISTANCE 200.0
+
+#define DRIVE_SPEED     20       // forward speed
+#define TURN_SPEED      30       // turning speed
+#define ANGLE_THRESHOLD 0.3      // radians (~5-6 degrees)
+#define DIST_THRESHOLD  10       // pixels
 
 #include "pacofuncs.c"
 
@@ -208,50 +219,10 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
     track_agents(ai, blobs);
     convert_to_metric(ai);
     determine_facing(ai);
+    clean_heading(ai);
     // printf("Driving dir: %d\n", ai->st.driving_dir);
     // printf("Facing direction: %f %f\n", ai->st.fxm, ai->st.fym);
     // printf("Angle: %f\n", ai->st.fa);
-
-    // --- Stabilize robot heading vector ---
-
-    double ndx = ai->st.self->dx;
-    double ndy = ai->st.self->dy;
-
-    // Normalize new heading
-    double mag = sqrt(ndx*ndx + ndy*ndy);
-    if (mag > 1e-6) { ndx /= mag; ndy /= mag; }
-
-    // Old stabilized heading
-    double odx = old_dx;
-    double ody = old_dy;
-
-    // Motion vector
-    double mx = ai->st.self->mx;
-    double my = ai->st.self->my;
-
-    // Compare new heading to old stabilized heading
-    double a1 = fabs(f_angle(odx, ody, ndx, ndy));
-
-    // Compare new heading to motion direction
-    double a2 = fabs(f_angle(mx, my, ndx, ndy));
-
-    if (a1 < 1.0 && a2 < 1.0) {
-        // New dx/dy is consistent → accept it
-        fix_dx = ndx;
-        fix_dy = ndy;
-    } else {
-        // New dx/dy flipped 180° → invert it
-        printf("Fix angle");
-        fix_dx = -ndx;
-        fix_dy = -ndy;
-    }
-
-    // Save stabilized direction
-    ai->st.sdx = fix_dx;
-    ai->st.sdy = fix_dy;
-
-    old_dx = fix_dx;
-    old_dy = fix_dy;
 
     // States on this range are for soccer against the opponent
     if (ai->st.state < 100) {
@@ -395,109 +366,42 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
       }
     } else if (ai->st.state < 300) {
       printf("Chase ball\n");
-      chase_ball(ai, blobs);
-    }
 
-  printf("CURRENT STATE: %d\n", ai->st.state);
+      struct blob *my_bot = ai->st.self;
+      struct blob *ball = ai->st.ball;
 
- }
-}
-/**********************************************************************************
- TO DO:
+      if (!my_bot || !ball) {
+        printf("All stop.\n");
+        if (!my_bot) {
+          printf("No bot.\n");
+        }
+        else {
+          printf("No ball.\n");
 
- Add the rest of your game playing logic below. Create appropriate functions to
- handle different states (be sure to name the states/functions in a meaningful
- way), and do any processing required in the space below.
-
- AI_main() should *NOT* do any heavy lifting. It should only call appropriate
- functions based on the current AI state.
-
- You will lose marks if AI_main() is cluttered with code that doesn't belong
- there.
-**********************************************************************************/
-
-// Coordinate detectGoalPosition() {
-//     printf("Detecting goal position...\n");
-//     Coordinate goal = {100, 0}; // dummy
-//     return goal;
-// }
-
-// Coordinate detectBallPosition() {
-//     printf("Detecting ball position...\n");
-//     Coordinate ball = {50, 0}; // dummy
-//     return ball;
-// }
-
-// Coordinate computeCoordinates(Coordinate ball, Coordinate goal) {
-//     Coordinate vector;
-//     vector.x = goal.x - ball.x;
-//     vector.y = goal.y - ball.y;
-//     printf("Computed path: (%d, %d)\n", vector.x, vector.y);
-//     return vector;
-// }
-
-double fix_dir(struct RoboAI *ai, struct blob *blobs) 
-{
-
-}
-
-double f_angle(double x1, double y1, double x2, double y2)
-{
-  double angle = atan2(x1*y2 - x2*y1, x1*x2 + y1*y2);
-  printf("Angle: %f\n", angle);
-  return angle;
-}
-
-#define DRIVE_SPEED     20       // forward speed
-#define TURN_SPEED      30       // turning speed
-#define ANGLE_THRESHOLD 0.3      // radians (~5-6 degrees)
-#define DIST_THRESHOLD  10       // pixels
-
-void chase_ball(struct RoboAI *ai, struct blob *blobs)
-{
-
-    struct blob *my_bot = ai->st.self;
-    struct blob *ball = ai->st.ball;
-
-    if (!my_bot || !ball) {
-      printf("All stop.\n");
-      if (!my_bot) {
-        printf("No bot.\n");
+        }
+          stop_moving(ai);
+          return;
       }
-      else {
-        printf("No ball.\n");
 
-      }
-        stop_moving(ai);
-        return;
-    }
+      // --- Ball/self vectors
+      double bx = ball->cx - my_bot->cx;
+      double by = ball->cy - my_bot->cy;
+      double sx = fix_dx;
+      double sy = fix_dy;
 
-    // Parameters
-    double theta_th = 0.85;      // cos(angle threshold)
-    double dis_th   = 150;       // distance threshold
-    int drive_pw    = 25;
-    int turn_pw     = 25;
+      normalize_vector(&bx, &by);
+      normalize_vector(&sx, &sy);
 
-    // --- Ball/self vectors
-    double bx = ball->cx - my_bot->cx;
-    double by = ball->cy - my_bot->cy;
-    double sx = fix_dx;
-    double sy = fix_dy;
+      double c_theta = bx * sx + by * sy;
+      double dist = sqrt((ball->cx - my_bot->cx)*(ball->cx - my_bot->cx) +
+                        (ball->cy - my_bot->cy)*(ball->cy - my_bot->cy));
 
-    normalize_vector(&bx, &by);
-    normalize_vector(&sx, &sy);
-
-    double c_theta = bx * sx + by * sy;
-    double dist = sqrt((ball->cx - my_bot->cx)*(ball->cx - my_bot->cx) +
-                       (ball->cy - my_bot->cy)*(ball->cy - my_bot->cy));
-
-    // FSM for chase states 201-299
-    switch(ai->st.state) {
+      switch(ai->st.state) {
         case 201:  // Turn toward the ball
         printf("Here.\n");
             if (dist < dis_th) {
                 fprintf(stderr, "[201] Ball reached! Switching to kick.\n");
-                ai->st.state = 221;
+                ai->st.state = 203;
                 return;
             }
 
@@ -518,29 +422,29 @@ void chase_ball(struct RoboAI *ai, struct blob *blobs)
                 }
             } else {
                 fprintf(stderr, "[201] Facing ball, start driving.\n");
-                ai->st.state = 211;
+                ai->st.state = 202;
             }
             break;
 
-        case 211:  // Drive toward the ball
+        case 202:  // Drive toward the ball
             if (dist < dis_th) {
-                fprintf(stderr, "[211] Reached ball! Switching to kick.\n");
-                ai->st.state = 221;
+                fprintf(stderr, "[202] Reached ball! Switching to kick.\n");
+                ai->st.state = 203;
                 return;
             }
 
             if (c_theta < theta_th) {
-                fprintf(stderr, "[211] Angle off, turn toward ball.\n");
+                fprintf(stderr, "[202] Angle off, turn toward ball.\n");
                 ai->st.state = 201;
                 return;
             }
 
-            fprintf(stderr, "[211] Driving forward toward ball.\n");
+            fprintf(stderr, "[202] Driving forward toward ball.\n");
             move_forward(drive_pw, ai);
             break;
 
-        case 221:  // Reached ball / Kick
-            fprintf(stderr, "[221] Ball reached, perform kick.\n");
+        case 203:  // Reached ball / Kick
+            fprintf(stderr, "[203] Ball reached, perform kick.\n");
             move_forward(100, ai);   // simulate kick
             ai->st.state = 201;  // reset to chase initial
             break;
@@ -550,6 +454,74 @@ void chase_ball(struct RoboAI *ai, struct blob *blobs)
             ai->st.state = 201;
             break;
     }
+    }
+
+  printf("CURRENT STATE: %d\n", ai->st.state);
+
+ }
+}
+/**********************************************************************************
+ TO DO:
+
+ Add the rest of your game playing logic below. Create appropriate functions to
+ handle different states (be sure to name the states/functions in a meaningful
+ way), and do any processing required in the space below.
+
+ AI_main() should *NOT* do any heavy lifting. It should only call appropriate
+ functions based on the current AI state.
+
+ You will lose marks if AI_main() is cluttered with code that doesn't belong
+ there.
+**********************************************************************************/
+
+void clean_heading(struct RoboAI *ai) {
+  // --- Stabilize robot heading vector ---
+
+    double ndx = ai->st.self->dx;
+    double ndy = ai->st.self->dy;
+
+    // Normalize new heading
+    double mag = sqrt(ndx*ndx + ndy*ndy);
+    if (mag > 1e-6) { ndx /= mag; ndy /= mag; }
+
+    // Old stabilized heading
+    double odx = old_dx;
+    double ody = old_dy;
+
+    // Motion vector
+    double mx = ai->st.self->mx;
+    double my = ai->st.self->my;
+
+    // Compare new heading to old stabilized heading
+    double a1 = fabs(f_angle(odx, ody, ndx, ndy));
+
+    // Compare new heading to motion direction
+    double a2 = fabs(f_angle(mx, my, ndx, ndy));
+
+    if (a1 < 1.0 && a2 < 1.0) {
+        // New dx/dy is consistent → accept it
+        fix_dx = ndx;
+        fix_dy = ndy;
+    } else {
+        // New dx/dy flipped 180° → invert it
+        printf("Fix angle");
+        fix_dx = -ndx;
+        fix_dy = -ndy;
+    }
+
+    // Save stabilized direction
+    ai->st.sdx = fix_dx;
+    ai->st.sdy = fix_dy;
+
+    old_dx = fix_dx;
+    old_dy = fix_dy;
+}
+
+double f_angle(double x1, double y1, double x2, double y2)
+{
+  double angle = atan2(x1*y2 - x2*y1, x1*x2 + y1*y2);
+  printf("Angle: %f\n", angle);
+  return angle;
 }
 
 // PENALTY KICK STUFF
