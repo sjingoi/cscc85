@@ -2,7 +2,7 @@
 #include "roboUtils.h"
 
 void turn_radius(int pw, double turn_rad, int dir) {
-  double wheel_sep = 0.12;
+  double wheel_sep = 12.0;
   double wheel_turn_rad = turn_rad - (wheel_sep / 2);
   double p_outer = 1;
   double p_inner = (turn_rad > 1000) ? 1 : wheel_turn_rad / (wheel_turn_rad + wheel_sep);

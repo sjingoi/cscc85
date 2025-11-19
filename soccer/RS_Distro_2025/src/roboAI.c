@@ -206,6 +206,7 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
 //  track_agents(ai,blobs);		// Currently, does nothing but endlessly track
 // Update blob tracking for this frame
     track_agents(ai, blobs);
+    convert_to_metric(ai);
 
     // --- Stabilize robot heading vector ---
 

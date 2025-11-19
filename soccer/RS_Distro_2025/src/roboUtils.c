@@ -1,5 +1,34 @@
 #include "roboUtils.h"
 
+void convert_to_metric(struct RoboAI *ai) {
+  ai->st.bvxm = ai->st.bvx * CM_PER_PIXEL_X;		       // Ball velocity vector
+	ai->st.bmxm = ai->st.bmx * CM_PER_PIXEL_X;		       // Ball motion vector
+	ai->st.bdxm = ai->st.bdx * CM_PER_PIXEL_X;               // Ball heading direction (from blob shape)
+	ai->st.svxm = ai->st.svx * CM_PER_PIXEL_X;		       // Current self [vx vy]
+	ai->st.smxm = ai->st.smx * CM_PER_PIXEL_X;		       // Self motion vector
+	ai->st.sdxm = ai->st.sdx * CM_PER_PIXEL_X;               // Self heading direction (from blob shape)
+	ai->st.ovxm = ai->st.ovx * CM_PER_PIXEL_X;		       // Current opponent [vx vy]
+	ai->st.omxm = ai->st.omx * CM_PER_PIXEL_X;		       // Opponent motion vector
+	ai->st.odxm = ai->st.odx * CM_PER_PIXEL_X;               // Opponent heading direction (from blob shape)
+
+  ai->st.bvym = ai->st.bvy * CM_PER_PIXEL_Y;			       // Ball velocity vector
+	ai->st.bmym = ai->st.bmy * CM_PER_PIXEL_Y;			       // Ball motion vector
+	ai->st.bdym = ai->st.bdy * CM_PER_PIXEL_Y;                // Ball heading direction (from blob shape)
+	ai->st.svym = ai->st.svy * CM_PER_PIXEL_Y;			       // Current self [vx vy]
+	ai->st.smym = ai->st.smy * CM_PER_PIXEL_Y;			       // Self motion vector
+	ai->st.sdym = ai->st.sdy * CM_PER_PIXEL_Y;                // Self heading direction (from blob shape)
+	ai->st.ovym = ai->st.ovy * CM_PER_PIXEL_Y;			       // Current opponent [vx vy]
+	ai->st.omym = ai->st.omy * CM_PER_PIXEL_Y;			       // Opponent motion vector
+	ai->st.odym = ai->st.ody * CM_PER_PIXEL_Y;                // Opponent heading direction (from blob shape)
+
+  ai->st.bpxm = ai->st.ball->cx * CM_PER_PIXEL_X;
+  ai->st.bpym = ai->st.ball->cy * CM_PER_PIXEL_Y;
+  ai->st.spxm = ai->st.self->cx * CM_PER_PIXEL_X;
+  ai->st.spym = ai->st.self->cy * CM_PER_PIXEL_Y;
+  ai->st.opxm = ai->st.opp->cx * CM_PER_PIXEL_X;
+  ai->st.opym = ai->st.opp->cy * CM_PER_PIXEL_Y;
+}
+
 void normalize_vector(double *x, double *y) {
     double mag = sqrt((*x)*(*x) + (*y)*(*y));
     if (mag > 1e-6) { *x /= mag; *y /= mag; }

@@ -88,13 +88,28 @@ struct AI_data{
 	double omx,omy;			       // Opponent motion vector
 	double odx,ody;                // Opponent heading direction (from blob shape)
 
+	// CONVERTED TO METRIC
+	double bpxm,bpym;		// positions
+	double spxm,spym;
+	double opxm,opym;	
+
+	double bvxm,bvym;			       // Ball velocity vector
+	double bmxm,bmym;			       // Ball motion vector
+	double bdxm,bdym;                // Ball heading direction (from blob shape)
+	double svxm,svym;			       // Current self [vx vy]
+	double smxm,smym;			       // Self motion vector
+	double sdxm,sdym;                // Self heading direction (from blob shape)
+	double ovxm,ovym;			       // Current opponent [vx vy]
+	double omxm,omym;			       // Opponent motion vector
+	double odxm,odym;                // Opponent heading direction (from blob shape)
+
 	// Normalized shooting vector of the ball to the goal
 	struct blob *shootingVector;
 	double shootingVectorX, shootingVectorY;
 	
 	// Target point for positioning before kick (x distance behind the ball along shooting vector)
 	double targetPointX, targetPointY;
-	double targetPointVectorX, targetPointVectorY; 
+	double targetPointVectorX, targetPointVectorY;
 };
 
 struct RoboAI {
