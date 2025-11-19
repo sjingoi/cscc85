@@ -400,12 +400,6 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
                 return;
             }
 
-            // if (c_theta < 0) {
-            //     fprintf(stderr, "[201] Facing away, turn 180.\n");
-            //     turn_right(50);
-            //     return;
-            // }
-
             if (c_theta < theta_th) {
                 double cross = sx * by - sy * bx;
                 if (cross < 0) {
