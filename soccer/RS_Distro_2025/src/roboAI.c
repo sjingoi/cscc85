@@ -36,18 +36,13 @@ double fix_dx, fix_dy;
 double o_dx, o_dy;
 
 // Parameters
-double theta_th = 0.85;      // cos(angle threshold)
-double dis_th   = 150;       // distance threshold
-int drive_pw    = 25;
-int turn_pw     = 25;
+double theta_th = 0.3;      // cos(angle threshold)
+double dis_th   = 75;       // distance threshold
+int drive_pw    = 30;
+int turn_pw     = 30;
 
 // Distance from ball to position bot for kick (in pixels) we can update this later
 #define KICK_POSITION_DISTANCE 200.0
-
-#define DRIVE_SPEED     20       // forward speed
-#define TURN_SPEED      30       // turning speed
-#define ANGLE_THRESHOLD 0.3      // radians (~5-6 degrees)
-#define DIST_THRESHOLD  10       // pixels
 
 #include "pacofuncs.c"
 
@@ -386,8 +381,8 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
       // --- Ball/self vectors
       double bx = ball->cx - my_bot->cx;
       double by = ball->cy - my_bot->cy;
-      double sx = fix_dx;
-      double sy = fix_dy;
+      double sx = ai->st.sdx;
+      double sy = ai->st.sdy;
 
       normalize_vector(&bx, &by);
       normalize_vector(&sx, &sy);
@@ -445,7 +440,7 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
 
         case 203:  // Reached ball / Kick
             fprintf(stderr, "[203] Ball reached, perform kick.\n");
-            move_forward(100, ai);   // simulate kick
+            move_forward(drive_pw, ai);   // simulate kick
             ai->st.state = 201;  // reset to chase initial
             break;
 
@@ -491,10 +486,10 @@ void clean_heading(struct RoboAI *ai, double *old_dx, double *old_dy) {
     // Compare new heading to old stabilized heading
     double a1 = fabs(f_angle(*old_dx, *old_dy, ndx, ndy));
 
-    // Compare new heading to motion direction
-    double a2 = fabs(f_angle(mx, my, ndx, ndy));
+    // // Compare new heading to motion direction
+    // double a2 = fabs(f_angle(mx, my, ndx, ndy));
 
-    if (a1 < 1.0 && a2 < 1.0) {
+    if (a1 < 1.0) {
         // New dx/dy is consistent
         fix_dx = ndx;
         fix_dy = ndy;

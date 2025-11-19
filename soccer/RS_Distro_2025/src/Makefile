@@ -108,7 +108,7 @@ am_roboSoccer_OBJECTS = roboSoccer.$(OBJEXT) \
 	imagecapture/gui.$(OBJEXT) imagecapture/imageProc.$(OBJEXT) \
 	imagecapture/svdDynamic.$(OBJEXT) imagecapture/utils.$(OBJEXT) \
 	imagecapture/v4l2uvc.$(OBJEXT) API/btcomm.$(OBJEXT) \
-	roboAI.$(OBJEXT)
+	roboAI.$(OBJEXT) roboUtils.$(OBJEXT) roboControl.$(OBJEXT)
 roboSoccer_OBJECTS = $(am_roboSoccer_OBJECTS)
 roboSoccer_LDADD = $(LDADD)
 AM_V_P = $(am__v_P_$(V))
@@ -126,7 +126,8 @@ am__v_at_1 =
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/include
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__maybe_remake_depfiles = depfiles
-am__depfiles_remade = ./$(DEPDIR)/roboAI.Po ./$(DEPDIR)/roboSoccer.Po \
+am__depfiles_remade = ./$(DEPDIR)/roboAI.Po ./$(DEPDIR)/roboControl.Po \
+	./$(DEPDIR)/roboSoccer.Po ./$(DEPDIR)/roboUtils.Po \
 	API/$(DEPDIR)/btcomm.Po imagecapture/$(DEPDIR)/avilib.Po \
 	imagecapture/$(DEPDIR)/color.Po imagecapture/$(DEPDIR)/gui.Po \
 	imagecapture/$(DEPDIR)/imageCapture.Po \
@@ -222,10 +223,10 @@ SHELL = /bin/bash
 STRIP = 
 VERSION = 1.0
 XMKMF = 
-abs_builddir = /cmshome/velasq57/cscc85f25_space/cscc85/soccer/RS_Distro_2025/src
-abs_srcdir = /cmshome/velasq57/cscc85f25_space/cscc85/soccer/RS_Distro_2025/src
-abs_top_builddir = /cmshome/velasq57/cscc85f25_space/cscc85/soccer/RS_Distro_2025
-abs_top_srcdir = /cmshome/velasq57/cscc85f25_space/cscc85/soccer/RS_Distro_2025
+abs_builddir = /courses/courses/cscc85f25/velasq57/cscc85/soccer/RS_Distro_2025/src
+abs_srcdir = /courses/courses/cscc85f25/velasq57/cscc85/soccer/RS_Distro_2025/src
+abs_top_builddir = /courses/courses/cscc85f25/velasq57/cscc85/soccer/RS_Distro_2025
+abs_top_srcdir = /courses/courses/cscc85f25/velasq57/cscc85/soccer/RS_Distro_2025
 ac_ct_CC = gcc
 am__include = include
 am__leading_dot = .
@@ -252,7 +253,7 @@ host_vendor = pc
 htmldir = ${docdir}
 includedir = ${prefix}/include
 infodir = ${datarootdir}/info
-install_sh = ${SHELL} /cmshome/velasq57/cscc85f25_space/cscc85/soccer/RS_Distro_2025/install-sh
+install_sh = ${SHELL} /courses/courses/cscc85f25/velasq57/cscc85/soccer/RS_Distro_2025/install-sh
 libdir = ${exec_prefix}/lib
 libexecdir = ${exec_prefix}/libexec
 localedir = ${datarootdir}/locale
@@ -261,7 +262,7 @@ mandir = ${datarootdir}/man
 mkdir_p = $(MKDIR_P)
 oldincludedir = /usr/include
 pdfdir = ${docdir}
-prefix = /cmshome/velasq57/cscc85f25_space/cscc85/soccer/RS_Distro_2025
+prefix = /courses/courses/cscc85f25/velasq57/cscc85/soccer/RS_Distro_2025
 program_transform_name = s,x,x,
 psdir = ${docdir}
 runstatedir = ${localstatedir}/run
@@ -274,7 +275,7 @@ top_build_prefix = ../
 top_builddir = ..
 top_srcdir = ..
 roboSoccer_SOURCES = roboSoccer.c imagecapture/imageCapture.c imagecapture/avilib.c imagecapture/color.c imagecapture/gui.c imagecapture/imageProc.c imagecapture/svdDynamic.c imagecapture/utils.c imagecapture/v4l2uvc.c \
-			API/btcomm.c roboAI.c
+			API/btcomm.c roboAI.c roboUtils.c roboControl.c
 
 AM_CPPFLAGS = -fpermissive
 all: all-am
@@ -396,7 +397,9 @@ distclean-compile:
 	-rm -f *.tab.c
 
 include ./$(DEPDIR)/roboAI.Po # am--include-marker
+include ./$(DEPDIR)/roboControl.Po # am--include-marker
 include ./$(DEPDIR)/roboSoccer.Po # am--include-marker
+include ./$(DEPDIR)/roboUtils.Po # am--include-marker
 include API/$(DEPDIR)/btcomm.Po # am--include-marker
 include imagecapture/$(DEPDIR)/avilib.Po # am--include-marker
 include imagecapture/$(DEPDIR)/color.Po # am--include-marker
@@ -560,7 +563,9 @@ clean-am: clean-binPROGRAMS clean-generic mostlyclean-am
 
 distclean: distclean-am
 		-rm -f ./$(DEPDIR)/roboAI.Po
+	-rm -f ./$(DEPDIR)/roboControl.Po
 	-rm -f ./$(DEPDIR)/roboSoccer.Po
+	-rm -f ./$(DEPDIR)/roboUtils.Po
 	-rm -f API/$(DEPDIR)/btcomm.Po
 	-rm -f imagecapture/$(DEPDIR)/avilib.Po
 	-rm -f imagecapture/$(DEPDIR)/color.Po
@@ -616,7 +621,9 @@ installcheck-am:
 
 maintainer-clean: maintainer-clean-am
 		-rm -f ./$(DEPDIR)/roboAI.Po
+	-rm -f ./$(DEPDIR)/roboControl.Po
 	-rm -f ./$(DEPDIR)/roboSoccer.Po
+	-rm -f ./$(DEPDIR)/roboUtils.Po
 	-rm -f API/$(DEPDIR)/btcomm.Po
 	-rm -f imagecapture/$(DEPDIR)/avilib.Po
 	-rm -f imagecapture/$(DEPDIR)/color.Po
