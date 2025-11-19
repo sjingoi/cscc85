@@ -103,6 +103,10 @@ struct AI_data{
 	double omxm,omym;			       // Opponent motion vector
 	double odxm,odym;                // Opponent heading direction (from blob shape)
 
+	double fxm, fym; // Facing direction
+	double fa; // Facing angle [-180, 180], 0 is east
+	int driving_dir; // -1 backwards, 0 slow, 1 forwards.
+
 	// Normalized shooting vector of the ball to the goal
 	struct blob *shootingVector;
 	double shootingVectorX, shootingVectorY;

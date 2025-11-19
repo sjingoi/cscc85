@@ -21,12 +21,44 @@ void convert_to_metric(struct RoboAI *ai) {
 	ai->st.omym = ai->st.omy * CM_PER_PIXEL_Y;			       // Opponent motion vector
 	ai->st.odym = ai->st.ody * CM_PER_PIXEL_Y;                // Opponent heading direction (from blob shape)
 
-  ai->st.bpxm = ai->st.ball->cx * CM_PER_PIXEL_X;
-  ai->st.bpym = ai->st.ball->cy * CM_PER_PIXEL_Y;
-  ai->st.spxm = ai->st.self->cx * CM_PER_PIXEL_X;
-  ai->st.spym = ai->st.self->cy * CM_PER_PIXEL_Y;
-  ai->st.opxm = ai->st.opp->cx * CM_PER_PIXEL_X;
-  ai->st.opym = ai->st.opp->cy * CM_PER_PIXEL_Y;
+  if (ai->st.ball != NULL) {
+    ai->st.bpxm = ai->st.ball->cx * CM_PER_PIXEL_X;
+    ai->st.bpym = ai->st.ball->cy * CM_PER_PIXEL_Y;
+  }
+  if (ai->st.self != NULL) {
+    ai->st.spxm = ai->st.self->cx * CM_PER_PIXEL_X;
+    ai->st.spym = ai->st.self->cy * CM_PER_PIXEL_Y;
+  }
+  if (ai->st.opp != NULL) {
+    ai->st.opxm = ai->st.opp->cx * CM_PER_PIXEL_X;
+    ai->st.opym = ai->st.opp->cy * CM_PER_PIXEL_Y;
+  }
+}
+
+void determine_facing(struct RoboAI *ai) {
+  if (ai->st.driving_dir == 1) {
+    ai->st.fxm = ai->st.svxm;
+    ai->st.fym = ai->st.svym;
+  } else {
+    // When driving slow, use the last facing direction to determine which way our bot is facing.
+    if (dot(ai->st.fxm, ai->st.fym, ai->st.sdxm, ai->st.sdym) < 0) {
+      ai->st.fxm = ai->st.sdxm * -1;
+      ai->st.fym = ai->st.sdym * -1;
+    } else {
+      ai->st.fxm = ai->st.sdxm;
+      ai->st.fym = ai->st.sdym;
+    }
+  }
+  normalize_vector(&ai->st.fxm, &ai->st.fym);
+  ai->st.fa = atan2(ai->st.fym, ai->st.fxm) * 180 / 3.14159;
+}
+
+double dot(double x1, double y1, double x2, double y2) {
+  return x1 * x2 + y1 * y2;
+}
+
+double norm(double x, double y) {
+  return sqrt(dot(x, y, x, y));
 }
 
 void normalize_vector(double *x, double *y) {

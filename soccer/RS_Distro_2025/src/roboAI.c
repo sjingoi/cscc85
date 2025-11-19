@@ -207,6 +207,10 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
 // Update blob tracking for this frame
     track_agents(ai, blobs);
     convert_to_metric(ai);
+    determine_facing(ai);
+    // printf("Driving dir: %d\n", ai->st.driving_dir);
+    // printf("Facing direction: %f %f\n", ai->st.fxm, ai->st.fym);
+    // printf("Angle: %f\n", ai->st.fa);
 
     // --- Stabilize robot heading vector ---
 
@@ -343,7 +347,7 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
           int aligned = turn_towards_dir(ai, ai->st.targetPointVectorX, ai->st.targetPointVectorY);
           if (aligned) {
             ai->st.state = 103;
-            move_forward(30);
+            move_forward(30, ai);
           }
         }
         break;
@@ -532,12 +536,12 @@ void chase_ball(struct RoboAI *ai, struct blob *blobs)
             }
 
             fprintf(stderr, "[211] Driving forward toward ball.\n");
-            move_forward(drive_pw);
+            move_forward(drive_pw, ai);
             break;
 
         case 221:  // Reached ball / Kick
             fprintf(stderr, "[221] Ball reached, perform kick.\n");
-            move_forward(100);   // simulate kick
+            move_forward(100, ai);   // simulate kick
             ai->st.state = 201;  // reset to chase initial
             break;
 

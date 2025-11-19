@@ -6,6 +6,9 @@
 #define CM_PER_PIXEL_Y 0.1597
 
 void convert_to_metric(struct RoboAI *ai);
+void determine_facing(struct RoboAI *ai);
+double dot(double x1, double y1, double x2, double y2);
+double norm(double x, double y);
 void normalize_vector(double *x, double *y);
 int calculateShootingVector(struct RoboAI *ai, double *goal_x, double *goal_y, double *vec_x, double *vec_y);
 int calculatePointsWithinEpsilon(double *x1, double *y1, double *x2, double *y2, double epsilon);

@@ -16,8 +16,13 @@ void turn_radius(int pw, double turn_rad, int dir) {
   }
 }
 
-void move_forward(int pw) {
-    BT_drive(MOTOR_A, MOTOR_D, pw);
+void move_forward(int pw, struct RoboAI *ai) {
+  if (norm(ai->st.svxm, ai->st.svym) > 1.5 && pw > 10) {
+    ai->st.driving_dir = 1;
+  } else {
+    ai->st.driving_dir = 0;
+  }
+  BT_drive(MOTOR_A, MOTOR_D, pw);
 }
 
 void turn_left(int pw) {
