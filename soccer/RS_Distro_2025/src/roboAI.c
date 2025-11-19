@@ -219,7 +219,7 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
     track_agents(ai, blobs);
     convert_to_metric(ai);
     determine_facing(ai);
-    clean_heading(ai);
+    clean_heading(ai, &old_dx, &old_dy);
     // printf("Driving dir: %d\n", ai->st.driving_dir);
     // printf("Facing direction: %f %f\n", ai->st.fxm, ai->st.fym);
     // printf("Angle: %f\n", ai->st.fa);
@@ -474,7 +474,7 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
  there.
 **********************************************************************************/
 
-void clean_heading(struct RoboAI *ai) {
+void clean_heading(struct RoboAI *ai, double *old_dx, double *old_dy) {
   // --- Stabilize robot heading vector ---
 
     double ndx = ai->st.self->dx;
@@ -484,16 +484,12 @@ void clean_heading(struct RoboAI *ai) {
     double mag = sqrt(ndx*ndx + ndy*ndy);
     if (mag > 1e-6) { ndx /= mag; ndy /= mag; }
 
-    // Old stabilized heading
-    double odx = old_dx;
-    double ody = old_dy;
-
     // Motion vector
     double mx = ai->st.self->mx;
     double my = ai->st.self->my;
 
     // Compare new heading to old stabilized heading
-    double a1 = fabs(f_angle(odx, ody, ndx, ndy));
+    double a1 = fabs(f_angle(*old_dx, *old_dy, ndx, ndy));
 
     // Compare new heading to motion direction
     double a2 = fabs(f_angle(mx, my, ndx, ndy));
@@ -513,8 +509,8 @@ void clean_heading(struct RoboAI *ai) {
     ai->st.sdx = fix_dx;
     ai->st.sdy = fix_dy;
 
-    old_dx = fix_dx;
-    old_dy = fix_dy;
+    *old_dx = fix_dx;
+    *old_dy = fix_dy;
 }
 
 double f_angle(double x1, double y1, double x2, double y2)
