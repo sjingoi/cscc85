@@ -38,7 +38,7 @@ void move_forward(int pw, struct RoboAI *ai) {
   } else {
     ai->st.driving_dir = 0;
   }
-  BT_drive(MOTOR_A, MOTOR_D, pw);
+  BT_turn(MOTOR_A, pw, MOTOR_D, pw*0.95);
 }
 
 void stop_moving(struct RoboAI *ai) {
@@ -61,33 +61,39 @@ void turn_right(int pw) {
 // }
 
 int turn_towards_dir(struct RoboAI *ai, double t_dir_x, double t_dir_y) {
+  printf("Im here.\n");
+    double sx = ai->st.sdx;
+    double sy = ai->st.sdy;
 
-  struct blob *my_bot = ai->st.self;
-  double sx = my_bot->dx;
-  double sy = my_bot->dy;
-  double theta_th = 0.85;      // cos(angle threshold)
-  int turn_pw     = 30;
+    double theta_th = 0.99; // cos(angle) threshold (11 degrees)
+    int turn_pw = 15;
 
-  normalize_vector(&t_dir_x, &t_dir_y);
-  normalize_vector(&sx, &sy);
+    normalize_vector(&t_dir_x, &t_dir_y);
+    normalize_vector(&sx, &sy);
 
-  double c_theta = t_dir_x * sx + t_dir_y * sy;
+    double c_theta = t_dir_x * sx + t_dir_y * sy;
 
-  if (c_theta < 0) {
-    fprintf(stderr, "[201] Facing away, turn 180.\n");
-    turn_right(50);
-    return 0; // Not aligned
-  }
-
-  if (c_theta < theta_th) {
-    double cross = sx * t_dir_x - sy * t_dir_y;
-    if (cross < 0) {
-        turn_left(turn_pw);
-    } else {
-        turn_right(turn_pw);
+    // If facing more than 90 away, just turn until we're no longer opposite
+    if (c_theta < 0) {
+        double cross = sx * t_dir_y - sy * t_dir_x;
+        if (cross < 0) {
+            turn_left(turn_pw);
+        } else {
+            turn_right(turn_pw);
+        }
+        return 0; // Not aligned yet
     }
-    return 0; // Not aligned
-  } else {
+
+    // Normal alignment check
+    if (c_theta < theta_th) {
+        double cross = sx * t_dir_y - sy * t_dir_x;
+        if (cross < 0) {
+            turn_left(turn_pw);
+        } else {
+            turn_right(turn_pw);
+        }
+        return 0; // Not aligned yet
+    }
+
     return 1; // Aligned
-  }
 }

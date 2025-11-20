@@ -82,25 +82,33 @@ void normalize_vector(double *x, double *y) {
 }
 
 // Helper function that returns the goal position based on the side the bot is on
-int calculateGoalPosition(struct RoboAI *ai, double *goal_x, double *goal_y) {
+int calculateGoalPosition(struct RoboAI *ai, double *goal_x, double *goal_y, int team) {
   // Side 0: Left side bot, goal is on the right
   // Side 1: Right side bot, goal is on the left
   if (ai->st.side == 0) {
-    *goal_x = sx - 1;
-  } else {
-    // Right side bot, goal is on the left
-    *goal_x = 0;
-  }
+        // Left side bot, goal is on the right
+        *goal_x = sx - 1;
+        if (team == 1) {
+          *goal_x = 0;
+        }
+    } else {
+        // Right side bot, goal is on the left
+        *goal_x = 0;
+        if (team == 1) {
+          *goal_x = sx - 1;
+        }
+    }
   // Assumption that the goal is in the middle of the field vertically
   *goal_y = sy / 2.0;
   return 1;
 }
 
 // This helper calculates the vector between the ball and the goal with the goal being the forward direction
+// Team = 0 (our), 1 (opp)
 // Returns: 1 on success, 0 on failure (if ball position not available)
 // Output parameters: goal_x, goal_y - goal center coordinates
 //                    vec_x, vec_y - normalized vector from ball to goal
-int calculateShootingVector(struct RoboAI *ai, double *goal_x, double *goal_y, double *vec_x, double *vec_y) {
+int calculateShootingVector(struct RoboAI *ai, double *goal_x, double *goal_y, double *vec_x, double *vec_y, int team) {
     // Check if ball position is available
     if (ai->st.ball == NULL || ai->st.ballID == 0) {
         // Ball position not available, return failure as we can't calculate a shooting vector
@@ -115,12 +123,19 @@ int calculateShootingVector(struct RoboAI *ai, double *goal_x, double *goal_y, d
     // side=0: bot's own side is left, goal to score on is on the right (x = sx)
     // side=1: bot's own side is right, goal to score on is on the left (x = 0)
     // Goal center is at the middle of the field vertically (y = sy/2)
+
     if (ai->st.side == 0) {
         // Left side bot, goal is on the right
         *goal_x = sx - 1;
+        if (team == 1) {
+          *goal_x = 0;
+        }
     } else {
         // Right side bot, goal is on the left
         *goal_x = 0;
+        if (team == 1) {
+          *goal_x = sx - 1;
+        }
     }
 
     // Assumption that the goal is in the middle of the field vertically
@@ -146,9 +161,16 @@ int calculateShootingVector(struct RoboAI *ai, double *goal_x, double *goal_y, d
 }
 
 // Calculate the vector form from the bot to a target point
-int calculateTargetPointVector(struct RoboAI *ai, double *targetPointX, double *targetPointY, double *vectorX, double *vectorY) {
-  double dx = *targetPointX - ai->st.self->cx;
-  double dy = *targetPointY - ai->st.self->cy;
+int calculateTargetPointVector(struct RoboAI *ai, double *targetPointX, double *targetPointY, double *vectorX, double *vectorY, int team) {
+  double dx;
+  double dy;
+  if (team == 0) {
+    dx = *targetPointX - ai->st.self->cx;
+    dy = *targetPointY - ai->st.self->cy;
+  } else {
+    dx = *targetPointX - ai->st.opp->cx;
+    dy = *targetPointY - ai->st.opp->cy;
+  }
   // Normalize the vector
   double magnitude = sqrt(dx * dx + dy * dy);
   *vectorX = dx / magnitude;
@@ -184,4 +206,35 @@ int calculateHeadingDifference(double *heading1, double *heading2, double epsilo
 int calculateWheelSpeedRatio(double *arcDiameter, double *ratio) {
   // lets trial and error how much torque the wheels have before we fill this out 
   return 1;
+}
+
+void update_vars(struct RoboAI *ai)
+{ 
+  int oteam;
+  if (ai->st.side == 0) {
+    oteam = 1;
+  }  else {
+    oteam = 0;
+  }
+    // update facing direction
+    determine_facing(ai);
+
+    // update goal position
+    calculateGoalPosition(ai, &(ai->st.goalx), &(ai->st.goaly), ai->st.side);
+    calculateGoalPosition(ai, &(ai->st.ogoalx), &(ai->st.ogoaly), oteam);
+
+    // update shooting vector
+    int ok1 = calculateShootingVector(ai, &(ai->st.goalx), &(ai->st.goaly), &ai->st.shootingVectorX, &ai->st.shootingVectorY, oteam);
+    if (!ok1) {
+        // ball not visible — set vector to zero
+        ai->st.shootingVectorX = 0;
+        ai->st.shootingVectorY = 0;
+    }
+
+    int ok2 = calculateShootingVector(ai, &(ai->st.ogoalx), &(ai->st.ogoaly), &ai->st.oShootingVectorX, &ai->st.oShootingVectorY, oteam);
+    if (!ok2) {
+        // ball not visible — set vector to zero
+        ai->st.oShootingVectorX = 0;
+        ai->st.oShootingVectorY = 0;
+    }
 }
