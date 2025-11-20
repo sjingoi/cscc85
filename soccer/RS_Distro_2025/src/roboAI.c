@@ -208,89 +208,51 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
     track_agents(ai, blobs);
     convert_to_metric(ai);
     determine_facing(ai);
-    printf("Hi\n");
-    // printf("Driving dir: %d\n", ai->st.driving_dir);
-    // printf("Facing direction: %f %f\n", ai->st.fxm, ai->st.fym);
-    // printf("Angle: %f\n", ai->st.fa);
-
-    // --- Stabilize robot heading vector ---
-
-    double ndx = ai->st.self->dx;
-    double ndy = ai->st.self->dy;
-
-    // Normalize new heading
-    double mag = sqrt(ndx*ndx + ndy*ndy);
-    if (mag > 1e-6) { ndx /= mag; ndy /= mag; }
-
-    // Old stabilized heading
-    double odx = old_dx;
-    double ody = old_dy;
-
-    // Motion vector
-    double mx = ai->st.self->mx;
-    double my = ai->st.self->my;
-
-    // Compare new heading to old stabilized heading
-    double a1 = fabs(f_angle(odx, ody, ndx, ndy));
-
-    // Compare new heading to motion direction
-    double a2 = fabs(f_angle(mx, my, ndx, ndy));
-
-    if (a1 < 1.0 && a2 < 1.0) {
-        // New dx/dy is consistent → accept it
-        fix_dx = ndx;
-        fix_dy = ndy;
-    } else {
-        // New dx/dy flipped 180° → invert it
-        printf("Fix angle");
-        fix_dx = -ndx;
-        fix_dy = -ndy;
-    }
-
-    // Save stabilized direction
-    ai->st.sdx = fix_dx;
-    ai->st.sdy = fix_dy;
-
-    old_dx = fix_dx;
-    old_dy = fix_dy;
 
     // States on this range are for soccer against the opponent
     if (ai->st.state < 100) {
       double def_dist = 15.0;
       double defense_target_x = (ai->st.side == 0) ? def_dist : 170.0 - def_dist;
       double defense_target_y = 115.0 / 2.0;
-      double distance = sqrt(dot(ai->st.spxm, ai->st.spym, defense_target_x, defense_target_y));
+      double distance = norm(ai->st.spxm - defense_target_x, ai->st.spym - defense_target_y);
       double defense_dir_x = defense_target_x - ai->st.spxm; // X direction to 
       double defense_dir_y = defense_target_y - ai->st.spym;
       normalize_vector(&defense_dir_x, &defense_dir_y);
 
       switch(ai->st.state) {
-        case 001:
+        case 1:
           if (ai->st.driving_dir == 1) {
             ai->st.state = 11;
           }
           break;
-        case 011:
-          if (distance < 7.5) ai->st.state = 21;
+        case 11:
+          if (distance < 5) ai->st.state = 21;
           break;
       }
-      printf("Current state: %d\n", ai->st.state);
+      printf("State: %d\n", ai->st.state);
       // 0 - 20 are for defence
       // 21 - 99 are for offence
       switch(ai->st.state) {
         // Go to defence kick position
         case 1:
         {
-          move_forward(30, ai);
+          move_forward(35, ai);
           break;
         }
         case 11:
         {
           double angle_delta = angle_diff(ai->st.fa, atan2(defense_dir_y, defense_dir_x)); 
-          double a = 1;
-          printf("Distance: %f, Angle Delta: %f\n", distance, angle_delta);
-          stop_moving(ai);
-          // turn_radius(50, a / fabs(angle_delta), (angle_delta < 0) ? 0 : 1, ai);
+          double a = 10;
+          printf("====================\n");
+          printf("Driving: %d\n", ai->st.driving_dir);
+          printf("Target_angle: %f\n", atan2(defense_dir_y, defense_dir_x));
+          printf("Current angle:%f\n", ai->st.fa);
+          printf("Position: X: %f, Y: %f\n", ai->st.spxm, ai->st.spym);
+          printf("Target: X: %f, Y: %f\n", defense_target_x, defense_target_y);
+          printf("Distance: %f\nAngle Delta: %f\nDir: %d\n", distance, angle_delta, (angle_delta < 0) ? 0 : 1);
+          // stop_moving(ai);
+          // move_forward(35, ai);
+          turn_radius(50, a/(angle_delta * angle_delta), (angle_delta < 0) ? 0 : 1, ai);
           break;
         }
         
@@ -409,8 +371,6 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
       printf("Chase ball\n");
       chase_ball(ai, blobs);
     }
-
-  printf("CURRENT STATE: %d\n", ai->st.state);
 
  }
 }

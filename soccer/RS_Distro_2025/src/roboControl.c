@@ -6,8 +6,12 @@ void turn_radius(int pw, double turn_rad, int dir, struct RoboAI *ai) {
   double wheel_turn_rad = turn_rad - (wheel_sep / 2);
   double p_outer = 1;
   double p_inner = (turn_rad > 1000) ? 1 : wheel_turn_rad / (wheel_turn_rad + wheel_sep);
-
-  printf("Turning with power po %f pi %f: ", p_outer, p_inner);
+  
+  if (turn_rad > 10 && norm(ai->st.svxm, ai->st.svym) > 1.0 && pw > 10) {
+    ai->st.driving_dir = 1;
+  } else {
+    ai->st.driving_dir = 0;
+  }
 
   if (dir == 1) {
     BT_turn(MOTOR_A, pw * p_outer, MOTOR_D, pw * p_inner * 0.95);
