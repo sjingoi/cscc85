@@ -38,10 +38,11 @@ void turn_right(int pw) {
     BT_turn(MOTOR_A, pw, MOTOR_D, -pw);
 }
 
-int alignment(struct RoboAI *ai, double t_dir_x, double t_dir_y) {
-  double c_theta = dot(ai->st.fxm, ai->st.fym, t_dir_x, t_dir_y);
-  if (atan(c_theta) * 180 / 3.1415 < )
-}
+// double alignment(struct RoboAI *ai, double t_dir_x, double t_dir_y) {
+//   double t_angle = atan2(t_dir_y, t_dir_x);
+//   double c_theta = dot(ai->st.fxm, ai->st.fym, t_dir_x, t_dir_y);
+//   if (atan(c_theta) * 180 / 3.1415 < )
+// }
 
 int turn_towards_dir(struct RoboAI *ai, double t_dir_x, double t_dir_y) {
 

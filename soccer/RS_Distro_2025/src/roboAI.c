@@ -208,6 +208,7 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
     track_agents(ai, blobs);
     convert_to_metric(ai);
     determine_facing(ai);
+    printf("Hi\n");
     // printf("Driving dir: %d\n", ai->st.driving_dir);
     // printf("Facing direction: %f %f\n", ai->st.fxm, ai->st.fym);
     // printf("Angle: %f\n", ai->st.fa);
@@ -256,30 +257,48 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
     // States on this range are for soccer against the opponent
     if (ai->st.state < 100) {
       double def_dist = 15.0;
-      double defense_target_x = (side == 0) ? def_dist : 170.0 - def_dist;
+      double defense_target_x = (ai->st.side == 0) ? def_dist : 170.0 - def_dist;
       double defense_target_y = 115.0 / 2.0;
-      double defense_dir_x = defense_target_x - ai->at.spxm; // X direction to 
-      double defense_dir_y = defense_target_y - ai->at.spym;
+      double distance = sqrt(dot(ai->st.spxm, ai->st.spym, defense_target_x, defense_target_y));
+      double defense_dir_x = defense_target_x - ai->st.spxm; // X direction to 
+      double defense_dir_y = defense_target_y - ai->st.spym;
       normalize_vector(&defense_dir_x, &defense_dir_y);
 
+      switch(ai->st.state) {
+        case 001:
+          if (ai->st.driving_dir == 1) {
+            ai->st.state = 11;
+          }
+          break;
+        case 011:
+          if (distance < 7.5) ai->st.state = 21;
+          break;
+      }
+      printf("Current state: %d\n", ai->st.state);
       // 0 - 20 are for defence
       // 21 - 99 are for offence
       switch(ai->st.state) {
         // Go to defence kick position
+        case 1:
+        {
+          move_forward(30, ai);
+          break;
+        }
         case 11:
         {
-          int aligned = turn_towards_dir(ai, defense_dir_x, defense_dir_y);
-          if (aligned) {
-            move_forward(75, ai);
-          } else {
-            
-          }
+          double angle_delta = angle_diff(ai->st.fa, atan2(defense_dir_y, defense_dir_x)); 
+          double a = 1;
+          printf("Distance: %f, Angle Delta: %f\n", distance, angle_delta);
+          stop_moving(ai);
+          // turn_radius(50, a / fabs(angle_delta), (angle_delta < 0) ? 0 : 1, ai);
           break;
         }
         
         // This is the moving towards a point along the vector of point behind the bot to the ball
         case 21:
         {
+          printf("Move towards ball...\n");
+          stop_moving(ai);
           // Similar implementation to penalty
           // Keep calculating what a good vector to get the ball into the goal is and move towards
           // Exit this state once we are along that vector

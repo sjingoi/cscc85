@@ -35,6 +35,21 @@ void convert_to_metric(struct RoboAI *ai) {
   }
 }
 
+double normalize_angle(double a) {
+    a = fmod(a, 2*M_PI);
+    if (a < 0) a += 2*M_PI;
+    return a;
+}
+
+double angle_diff(double angle, double target_angle) {
+    angle = normalize_angle(angle);
+    target_angle = normalize_angle(target_angle);
+
+    double diff = fmod(angle - target_angle + M_PI, 2*M_PI);
+    if (diff < 0) diff += 2*M_PI;
+    return diff - M_PI;
+}
+
 void determine_facing(struct RoboAI *ai) {
   if (ai->st.driving_dir == 1) {
     ai->st.fxm = ai->st.svxm;

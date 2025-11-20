@@ -10,6 +10,7 @@ void determine_facing(struct RoboAI *ai);
 double dot(double x1, double y1, double x2, double y2);
 double norm(double x, double y);
 void normalize_vector(double *x, double *y);
+double angle_diff(double angle, double target_angle);
 int calculateShootingVector(struct RoboAI *ai, double *goal_x, double *goal_y, double *vec_x, double *vec_y);
 int calculatePointsWithinEpsilon(double *x1, double *y1, double *x2, double *y2, double epsilon);
 int calculateGoalPosition(struct RoboAI *ai, double *goal_x, double *goal_y);
