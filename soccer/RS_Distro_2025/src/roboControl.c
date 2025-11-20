@@ -49,7 +49,7 @@ void safe_go_to_point(struct RoboAI *ai, int power, double turn_smoothness, doub
   // "draw" a circle around the enemy with some radius in metric
   double enemy_x = ai->st.opxm;
   double enemy_y = ai->st.opym;
-  double enemy_radius = 10.0 // 10 cm radius
+  double enemy_radius = 10.0; // 10 cm radius
 
   // vector from enemy center to segment start
   double f_x = start_x - enemy_x;
