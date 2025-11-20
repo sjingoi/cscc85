@@ -357,70 +357,47 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
       }
 
       // --- Ball/self vectors
-      double bx = ball->cx - my_bot->cx;
-      double by = ball->cy - my_bot->cy;
-      double sx = ai->st.sdx;
-      double sy = ai->st.sdy;
+      double ballx = ai->st.bpxm;   // ball position in meters
+      double bally = ai->st.bpym;
+      double myx   = ai->st.spxm;   // robot position in meters
+      double myy   = ai->st.spym;
 
-      normalize_vector(&bx, &by);
-      normalize_vector(&sx, &sy);
+      double dist_to_ball = point_distance(myx, myy, ballx, bally);
 
-      double c_theta = bx * sx + by * sy;
-      double dist = sqrt((ball->cx - my_bot->cx)*(ball->cx - my_bot->cx) +
-                        (ball->cy - my_bot->cy)*(ball->cy - my_bot->cy));
+      double fast_speed = 50;
+      double slow_speed = 25;
+      double slow_dist  = 20;   // meters (20 cm)
 
       switch(ai->st.state) {
-        case 201:  // Turn toward the ball
-        printf("Here.\n");
-            if (dist < dis_th) {
-                fprintf(stderr, "[201] Ball reached! Switching to kick.\n");
-                ai->st.state = 203;
-                return;
+        case 201:
+            printf("Distance: %f \n", dist_to_ball);
+
+            // Slow down when close
+            int power, turn_smooth;
+
+            if (dist_to_ball < slow_dist) {
+                power = slow_speed;
+                turn_smooth = 10;
+            }
+            else {
+                power = fast_speed;
+                turn_smooth = 10;
             }
 
-            if (c_theta < theta_th) {
-                double cross = sx * by - sy * bx;
-                if (cross < 0) {
-                    fprintf(stderr, "[201] Turning left toward ball.\n");
-                    turn_left(turn_pw);
-                } else {
-                    fprintf(stderr, "[201] Turning right toward ball.\n");
-                    turn_right(turn_pw);
-                }
-            } else {
-                fprintf(stderr, "[201] Facing ball, start driving.\n");
-                ai->st.state = 202;
-            }
-            break;
+            go_to_point(ai, power, turn_smooth, ballx, bally);
 
-        case 202:  // Drive toward the ball
-            if (dist < dis_th) {
-                fprintf(stderr, "[202] Reached ball! Switching to kick.\n");
-                ai->st.state = 203;
-                return;
-            }
+            printf("ball x %f ball y %f  dist: %f  power: %d\n",
+                  ballx, bally, dist_to_ball, power);
 
-            if (c_theta < theta_th) {
-                fprintf(stderr, "[202] Angle off, turn toward ball.\n");
-                ai->st.state = 201;
-                return;
-            }
-
-            fprintf(stderr, "[202] Driving forward toward ball.\n");
-            move_forward(drive_pw, ai);
-            break;
-
-        case 203:  // Reached ball / Kick
-            fprintf(stderr, "[203] Ball reached, perform kick.\n");
-            move_forward(100, ai);   // simulate kick
-            ai->st.state = 201;  // reset to chase initial
             break;
 
         default:
             fprintf(stderr, "[CHASE] Unknown state %d, default to 201.\n", ai->st.state);
             ai->st.state = 201;
             break;
-    }
+      }
+
+
     }
 
   printf("CURRENT STATE: %d\n", ai->st.state);
