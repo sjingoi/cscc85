@@ -233,4 +233,7 @@ void update_vars(struct RoboAI *ai, double *goal_x, double *goal_y)
         ai->st.oShootingVectorX = 0;
         ai->st.oShootingVectorY = 0;
     }
+
+    ai->st.target_point_turning_degrees_required = calculateHeadingDifference(ai->st.fa, ai->st.targetPointVectorX, ai->st.targetPointVectorY);
+    ai->st.shooting_turning_degrees_required = calculateHeadingDifference(ai->st.fa, ai->st.shootingVectorX, ai->st.shootingVectorY);
 }
