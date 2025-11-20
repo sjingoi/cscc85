@@ -311,19 +311,16 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
         break;
 
       case 102:
-        // Code to align to the target point based off heading
-        // Calculate the vector of the bot to the target point
-        // Motors are started to driving forward here then we transition to state 103
-        {
-          int aligned = turn_towards_dir(ai, ai->st.targetPointVectorX, ai->st.targetPointVectorY);
-          if (aligned) {
-            ai->st.state = 103;
-            move_forward(30, ai);
-          }
-        }
-        break;
-      case 103:
       {
+        // This state will constantly realign or drive forward until we are within epsilon of the target point
+        // Motors are started to driving forward here then we transition to state 103
+        int aligned = turn_towards_dir(ai, ai->st.targetPointVectorX, ai->st.targetPointVectorY);
+        if (aligned) {
+          move_forward(30, ai);
+        } else {
+          // We lost alignment so stop the motors from spinning
+          stop_moving(ai);
+        }
 
         // Code to drive to that point until we are within epsilon
         // Motors are stopped once we are within epsilon of the point and initiate a turn then transition to state 104
@@ -331,12 +328,12 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
         
         if (at_target) {
           printf("here\n");
-          ai->st.state = 104;
+          ai->st.state = 103;
           stop_moving(ai);
         }
       }
         break;
-      case 104: 
+      case 103: 
       {
         // Code to align to the heading of the goal based off the shooting vector
         // Check if we are aligned along the shooting vector
@@ -345,13 +342,13 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
         int aligned = turn_towards_dir(ai, ai->st.shootingVectorX, ai->st.shootingVectorY);
         printf("Aligned: %d\n", aligned);
         if (aligned) {
-          ai->st.state = 105;
+          ai->st.state = 104;
           stop_moving(ai);
         }
 
       }
         break;
-      case 105:
+      case 104:
         // Code to kick the ball
         BT_drive(MOTOR_A, MOTOR_D, 100);
         int current = calculatePointsWithinEpsilon(&ai->st.self->cx, &ai->st.self->cy, &ai->st.targetPointX, &ai->st.targetPointY, 10);
