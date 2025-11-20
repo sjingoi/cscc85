@@ -37,8 +37,8 @@ void safe_go_to_point(struct RoboAI *ai, int power, double turn_smoothness, doub
   double start_y = ai->st.spym;
 
   // if we detect a potential collision then move along the x or y axis instead so the next iteration detects no collision
-  double dx == target_x - start_x;
-  double dy == target_y - start_y;
+  double dx = target_x - start_x;
+  double dy = target_y - start_y;
 
   double seg_length = point_distance(start_x, start_y, target_x, target_y);
 
