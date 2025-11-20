@@ -110,6 +110,10 @@ struct AI_data{
 	// Normalized shooting vector of the ball to the goal
 	struct blob *shootingVector;
 	double shootingVectorX, shootingVectorY;
+
+	// Normalized shooting vector of the ball to the goal (opponent)
+	struct blob *oShootingVector;
+	double oShootingVectorX, oShootingVectorY;
 	
 	// Target point for positioning before kick (x distance behind the ball along shooting vector)
 	double targetPointX, targetPointY;

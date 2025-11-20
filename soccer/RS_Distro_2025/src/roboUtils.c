@@ -73,13 +73,13 @@ int calculateGoalPosition(struct RoboAI *ai, double *goal_x, double *goal_y, int
   if (ai->st.side == 0) {
         // Left side bot, goal is on the right
         *goal_x = sx - 1;
-        if (team = 1) {
+        if (team == 1) {
           *goal_x = 0;
         }
     } else {
         // Right side bot, goal is on the left
         *goal_x = 0;
-        if (team = 1) {
+        if (team == 1) {
           *goal_x = sx - 1;
         }
     }
@@ -112,13 +112,13 @@ int calculateShootingVector(struct RoboAI *ai, double *goal_x, double *goal_y, d
     if (ai->st.side == 0) {
         // Left side bot, goal is on the right
         *goal_x = sx - 1;
-        if (team = 1) {
+        if (team == 1) {
           *goal_x = 0;
         }
     } else {
         // Right side bot, goal is on the left
         *goal_x = 0;
-        if (team = 1) {
+        if (team == 1) {
           *goal_x = sx - 1;
         }
     }
@@ -149,12 +149,12 @@ int calculateShootingVector(struct RoboAI *ai, double *goal_x, double *goal_y, d
 int calculateTargetPointVector(struct RoboAI *ai, double *targetPointX, double *targetPointY, double *vectorX, double *vectorY, int team) {
   double dx;
   double dy;
-  if (team = 0) {
-    double dx = *targetPointX - ai->st.self->cx;
-    double dy = *targetPointY - ai->st.self->cy;
+  if (team == 0) {
+    dx = *targetPointX - ai->st.self->cx;
+    dy = *targetPointY - ai->st.self->cy;
   } else {
-    double dx = *targetPointX - ai->st.opp->cx;
-    double dy = *targetPointY - ai->st.opp->cy;
+    dx = *targetPointX - ai->st.opp->cx;
+    dy = *targetPointY - ai->st.opp->cy;
   }
   // Normalize the vector
   double magnitude = sqrt(dx * dx + dy * dy);
@@ -191,4 +191,21 @@ int calculateHeadingDifference(double *heading1, double *heading2, double epsilo
 int calculateWheelSpeedRatio(double *arcDiameter, double *ratio) {
   // lets trial and error how much torque the wheels have before we fill this out 
   return 1;
+}
+
+void update_vars(struct RoboAI *ai, double *goal_x, double *goal_y, double *vec_x, double *vec_y, int team)
+{
+    // update facing direction
+    determine_facing(ai);
+
+    // update goal position
+    calculateGoalPosition(ai, goal_x, goal_y, team);
+
+    // update shooting vector
+    int ok = calculateShootingVector(ai, goal_x, goal_y, vec_x, vec_y, team);
+    if (!ok) {
+        // ball not visible — set vector to zero
+        *vec_x = 0;
+        *vec_y = 0;
+    }
 }
