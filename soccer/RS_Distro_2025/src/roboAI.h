@@ -124,6 +124,8 @@ struct AI_data{
 
 	// Store past 8 gyro angles
 	double gyroAngles[8];
+
+	double enemyDistance; // Distance to the opponent robot
 };
 
 struct RoboAI {

@@ -223,6 +223,8 @@ void update_vars(struct RoboAI *ai)
   }  else {
     oteam = 0;
   }
+    // Update the distance between the enenmy and us
+    updateEnemyDistance(ai);
     // update facing direction
     determine_facing(ai);
 
@@ -263,6 +265,6 @@ void updateTargetDefensivePosition(struct RoboAI *ai) {
   ai->st.targetPointY = (ball_y + goal_y) / 2;
 }
 
-bool shootingPathClear(struct RoboAI *ai) {
-  
+void updateEnemyDistance(struct RoboAI *ai) {
+  ai->st.enemyDistance = point_distance(ai->st.opp->cx, ai->st.opp->cy, ai->st.self->cx,  ai->st.self->cy);
 }

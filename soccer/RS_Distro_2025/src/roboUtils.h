@@ -19,3 +19,4 @@ double f_angle(double x1, double y1, double x2, double y2);
 void update_vars(struct RoboAI *ai);
 double point_distance(double x1, double y1, double x2, double y2);
 void updateTargetDefensivePosition(struct RoboAI *ai);
+void updateEnemyDistance(struct RoboAI *ai);
