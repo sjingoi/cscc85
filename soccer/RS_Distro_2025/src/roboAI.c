@@ -356,7 +356,17 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
         // Code to kick the ball
         BT_drive(MOTOR_A, MOTOR_D, 100);
         int current = calculatePointsWithinEpsilon(&ai->st.self->cx, &ai->st.self->cy, &ai->st.targetPointX, &ai->st.targetPointY, 10);
-        // if ()
+        if (current) {
+          printf("here\n");
+          ai->st.state = 104;
+          stop_moving(ai);
+        }
+        break;
+      }
+      case 106:
+        // Code to end
+        printf("Succesful kick?");
+        stop_moving(ai);
         break;
       }
     } else if (ai->st.state < 300) {
