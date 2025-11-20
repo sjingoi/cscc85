@@ -121,6 +121,9 @@ struct AI_data{
 
 	double goalx, goaly;
 	double ogoalx, ogoaly;
+
+	// Store past 8 gyro angles
+	double gyroAngles[8];
 };
 
 struct RoboAI {
