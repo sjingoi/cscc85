@@ -255,25 +255,25 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
 
     // States on this range are for soccer against the opponent
     if (ai->st.state < 100) {
+      double def_dist = 15.0;
+      double defense_target_x = (side == 0) ? def_dist : 170.0 - def_dist;
+      double defense_target_y = 115.0 / 2.0;
+      double defense_dir_x = defense_target_x - ai->at.spxm; // X direction to 
+      double defense_dir_y = defense_target_y - ai->at.spym;
+      normalize_vector(&defense_dir_x, &defense_dir_y);
+
       // 0 - 20 are for defence
       // 21 - 99 are for offence
       switch(ai->st.state) {
-        case 1:
-        {
-          // This is the entry into the soccer against opponent
-          // Set up the environment variables
-
-          // COPY THE PENALTY CODE HERE BUT EXTRACT INTO HELPER
-
-          // Always transition to the "go to defence kick position"
-          ai->st.state = 2;
-        }
         // Go to defence kick position
-        case 2:
+        case 11:
         {
-          // Keep moving until we are within an acceptable region for a defensive kick
-          // Check what the vector of the enemy bot to the goal is
-          // Given that vector get to somepoint that is on that vector while blocking our own goal
+          int aligned = turn_towards_dir(ai, defense_dir_x, defense_dir_y);
+          if (aligned) {
+            move_forward(75, ai);
+          } else {
+            
+          }
           break;
         }
         
@@ -283,13 +283,6 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
           // Similar implementation to penalty
           // Keep calculating what a good vector to get the ball into the goal is and move towards
           // Exit this state once we are along that vector
-          break;
-        }
-
-        // This is re-aligning the bot with the vector of ball to the goal
-        case 22:
-        {
-          // Similar implementation to penalty
           break;
         }
 
@@ -455,7 +448,6 @@ double f_angle(double x1, double y1, double x2, double y2)
 
 void chase_ball(struct RoboAI *ai, struct blob *blobs)
 {
-
     struct blob *my_bot = ai->st.self;
     struct blob *ball = ai->st.ball;
 
