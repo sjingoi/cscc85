@@ -3,7 +3,9 @@
 /** 
  * Make a turn with turn radius turn_rad in direction left (dir == 0) or right (dir == 1)
  */
-void turn_radius(int pw, double turn_rad, int dir);
+void turn_radius(int pw, double turn_rad, int dir, struct RoboAI *ai);
+
+void go_to_point(struct RoboAI *ai, int power, double target_x, double target_y);
 
 void move_forward(int pw, struct RoboAI *ai);
 

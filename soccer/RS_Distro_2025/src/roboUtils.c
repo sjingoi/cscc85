@@ -35,18 +35,37 @@ void convert_to_metric(struct RoboAI *ai) {
   }
 }
 
+double normalize_angle(double a) {
+    a = fmod(a, 2*M_PI);
+    if (a < 0) a += 2*M_PI;
+    return a;
+}
+
+double angle_diff(double angle, double target_angle) {
+    angle = normalize_angle(angle);
+    target_angle = normalize_angle(target_angle);
+
+    double diff = fmod(target_angle - angle  + M_PI, 2*M_PI);
+    if (diff < 0) diff += 2*M_PI;
+    return diff - M_PI;
+}
+
 void determine_facing(struct RoboAI *ai) {
   if (ai->st.driving_dir == 1) {
     ai->st.fxm = ai->st.svxm;
     ai->st.fym = ai->st.svym;
   } else {
-    // When slow, just use the stabilized heading
-    ai->st.fxm = ai->st.sdxm;
-    ai->st.fym = ai->st.sdym;
+    // When driving slow, use the last facing direction to determine which way our bot is facing.
+    if (dot(ai->st.fxm, ai->st.fym, ai->st.sdxm, ai->st.sdym) < 0) {
+      ai->st.fxm = ai->st.sdxm * -1;
+      ai->st.fym = ai->st.sdym * -1;
+    } else {
+      ai->st.fxm = ai->st.sdxm;
+      ai->st.fym = ai->st.sdym;
+    }
   }
   normalize_vector(&ai->st.fxm, &ai->st.fym);
-  ai->st.fa = atan2(ai->st.fym, ai->st.fxm) * 180 / 3.14159;
-  printf("Facing angle: %f", ai->st.fa);
+  ai->st.fa = atan2(ai->st.fym, ai->st.fxm);
 }
 
 double dot(double x1, double y1, double x2, double y2) {

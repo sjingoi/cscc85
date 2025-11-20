@@ -6,14 +6,30 @@ void turn_radius(int pw, double turn_rad, int dir, struct RoboAI *ai) {
   double wheel_turn_rad = turn_rad - (wheel_sep / 2);
   double p_outer = 1;
   double p_inner = (turn_rad > 1000) ? 1 : wheel_turn_rad / (wheel_turn_rad + wheel_sep);
-
-  printf("Turning with power po %f pi %f: ", p_outer, p_inner);
+  
+  if (turn_rad > 10 && norm(ai->st.svxm, ai->st.svym) > 1.0 && pw > 10) {
+    ai->st.driving_dir = 1;
+  } else {
+    ai->st.driving_dir = 0;
+  }
 
   if (dir == 1) {
     BT_turn(MOTOR_A, pw * p_outer, MOTOR_D, pw * p_inner * 0.95);
   } else {
     BT_turn(MOTOR_A, pw * p_inner, MOTOR_D, pw * p_outer * 0.95);
   }
+}
+
+/**
+ * Goes to a point
+ */
+void go_to_point(struct RoboAI *ai, int power, double target_x, double target_y) {
+  double dir_x = target_x - ai->st.spxm; // X direction to 
+  double dir_y = target_y - ai->st.spym;
+  normalize_vector(&dir_x, &dir_y);
+  double angle_delta = angle_diff(ai->st.fa, atan2(dir_y, dir_x)); 
+  double a = 10; // P-controller variable
+  turn_radius(power, a/(angle_delta * angle_delta), (angle_delta < 0) ? 0 : 1, ai);
 }
 
 void move_forward(int pw, struct RoboAI *ai) {
@@ -37,6 +53,12 @@ void turn_left(int pw) {
 void turn_right(int pw) {
     BT_turn(MOTOR_A, pw, MOTOR_D, -pw);
 }
+
+// double alignment(struct RoboAI *ai, double t_dir_x, double t_dir_y) {
+//   double t_angle = atan2(t_dir_y, t_dir_x);
+//   double c_theta = dot(ai->st.fxm, ai->st.fym, t_dir_x, t_dir_y);
+//   if (atan(c_theta) * 180 / 3.1415 < )
+// }
 
 int turn_towards_dir(struct RoboAI *ai, double t_dir_x, double t_dir_y) {
   printf("Im here.\n");

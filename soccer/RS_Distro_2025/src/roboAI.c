@@ -213,7 +213,7 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
 // Update blob tracking for this frame
     track_agents(ai, blobs);
     convert_to_metric(ai);
-    clean_heading(ai, &old_dx, &old_dy);
+    // clean_heading(ai, &old_dx, &old_dy);
     determine_facing(ai);
     update_vars(ai);
     
@@ -223,41 +223,39 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
 
     // States on this range are for soccer against the opponent
     if (ai->st.state < 100) {
+      double def_dist = 15.0;
+      double defense_target_x = (ai->st.side == 0) ? def_dist : 170.0 - def_dist;
+      double defense_target_y = 115.0 / 2.0;
+      double distance = norm(ai->st.spxm - defense_target_x, ai->st.spym - defense_target_y);
+
+      switch(ai->st.state) {
+        case 1:
+          if (ai->st.driving_dir == 1) ai->st.state = 11;
+          break;
+        case 11:
+          if (distance < 5) ai->st.state = 21;
+          break;
+      }
+      printf("State: %d\n", ai->st.state);
       // 0 - 20 are for defence
       // 21 - 99 are for offence
       switch(ai->st.state) {
-        case 1:
-        {
-          // This is the entry into the soccer against opponent
-          // Set up the environment variables
-
-          // COPY THE PENALTY CODE HERE BUT EXTRACT INTO HELPER
-
-          // Always transition to the "go to defence kick position"
-          ai->st.state = 2;
-        }
         // Go to defence kick position
-        case 2:
-        {
-          // Keep moving until we are within an acceptable region for a defensive kick
-          // Check what the vector of the enemy bot to the goal is
-          // Given that vector get to somepoint that is on that vector while blocking our own goal
+        case 1:
+          move_forward(35, ai);
           break;
-        }
+        case 11:
+          go_to_point(ai, 50, defense_target_x, defense_target_y);
+          break;
         
         // This is the moving towards a point along the vector of point behind the bot to the ball
         case 21:
         {
+          printf("Move towards ball...\n");
+          stop_moving(ai);
           // Similar implementation to penalty
           // Keep calculating what a good vector to get the ball into the goal is and move towards
           // Exit this state once we are along that vector
-          break;
-        }
-
-        // This is re-aligning the bot with the vector of ball to the goal
-        case 22:
-        {
-          // Similar implementation to penalty
           break;
         }
 
