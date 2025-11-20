@@ -312,8 +312,10 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
 
       case 102:
       {
+        double goal_x, goal_y;
         // This state will constantly realign or drive forward until we are within epsilon of the target point
         // Motors are started to driving forward here then we transition to state 103
+        update_vars(ai, &goal_x, &goal_y);
         int aligned = turn_towards_dir(ai, ai->st.targetPointVectorX, ai->st.targetPointVectorY);
         if (aligned) {
           move_forward(30, ai);

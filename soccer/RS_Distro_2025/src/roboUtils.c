@@ -193,19 +193,30 @@ int calculateWheelSpeedRatio(double *arcDiameter, double *ratio) {
   return 1;
 }
 
-void update_vars(struct RoboAI *ai, double *goal_x, double *goal_y, double *vec_x, double *vec_y, int team)
+void update_vars(struct RoboAI *ai, double *goal_x, double *goal_y)
 {
     // update facing direction
     determine_facing(ai);
 
-    // update goal position
-    calculateGoalPosition(ai, goal_x, goal_y, team);
+    // update goal position for our team
+    calculateGoalPosition(ai, goal_x, goal_y, 0);
 
     // update shooting vector
-    int ok = calculateShootingVector(ai, goal_x, goal_y, vec_x, vec_y, team);
+    int ok = calculateShootingVector(ai, goal_x, goal_y, &ai->st.shootingVectorX, &ai->st.shootingVectorY, 0);
     if (!ok) {
         // ball not visible — set vector to zero
-        *vec_x = 0;
-        *vec_y = 0;
+        ai->st.shootingVectorX = 0;
+        ai->st.shootingVectorY = 0;
+    }
+
+    // update goal position for opponent team
+    calculateGoalPosition(ai, goal_x, goal_y, 1);
+    
+    // update shooting vector for opponent team
+    int ok = calculateShootingVector(ai, goal_x, goal_y, &ai->st.oShootingVectorX, &ai->st.oShootingVectorY, 1);
+    if (!ok) {
+        // ball not visible — set vector to zero
+        ai->st.oShootingVectorX = 0;
+        ai->st.oShootingVectorY = 0;
     }
 }
