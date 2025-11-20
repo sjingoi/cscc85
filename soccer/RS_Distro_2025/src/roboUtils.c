@@ -46,6 +46,7 @@ void determine_facing(struct RoboAI *ai) {
   }
   normalize_vector(&ai->st.fxm, &ai->st.fym);
   ai->st.fa = atan2(ai->st.fym, ai->st.fxm) * 180 / 3.14159;
+  printf("Facing angle: %f", ai->st.fa);
 }
 
 double dot(double x1, double y1, double x2, double y2) {
@@ -191,7 +192,7 @@ int calculateWheelSpeedRatio(double *arcDiameter, double *ratio) {
 void update_vars(struct RoboAI *ai)
 { 
   int oteam;
-  if (ai->st.botCol == 0) {
+  if (ai->st.side == 0) {
     oteam = 1;
   }  else {
     oteam = 0;
@@ -200,7 +201,7 @@ void update_vars(struct RoboAI *ai)
     determine_facing(ai);
 
     // update goal position
-    calculateGoalPosition(ai, &(ai->st.goalx), &(ai->st.goaly), ai->st.botCol);
+    calculateGoalPosition(ai, &(ai->st.goalx), &(ai->st.goaly), ai->st.side);
     calculateGoalPosition(ai, &(ai->st.ogoalx), &(ai->st.ogoaly), oteam);
 
     // update shooting vector

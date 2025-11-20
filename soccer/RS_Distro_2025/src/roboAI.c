@@ -213,10 +213,8 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
 // Update blob tracking for this frame
     track_agents(ai, blobs);
     convert_to_metric(ai);
-    determine_facing(ai);
     clean_heading(ai, &old_dx, &old_dy);
-    // update variables for bot and opponent
-    double gx, gy, ogx, ogy;
+    determine_facing(ai);
     update_vars(ai);
     
     // printf("Driving dir: %d\n", ai->st.driving_dir);
@@ -278,9 +276,9 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
         // Sets the shooting vector of the ball to the goal (lets just assume that it will not fail right now)
         {
           double goal_x, goal_y;
-          calculateGoalPosition(ai, &goal_x, &goal_y, ai->st.botCol);
+          calculateGoalPosition(ai, &goal_x, &goal_y, ai->st.side);
 
-          if (calculateShootingVector(ai, &goal_x, &goal_y, &ai->st.shootingVectorX, &ai->st.shootingVectorY, ai->st.botCol)) {
+          if (calculateShootingVector(ai, &goal_x, &goal_y, &ai->st.shootingVectorX, &ai->st.shootingVectorY, ai->st.side)) {
             // Set the vector needed for the bot to reach a target point that is x distance from the ball
             // Using the shooting vector, extend x distance from the ball in the OPPOSITE direction of the shooting vector
             // (behind the ball) so the bot can approach and kick the ball forward
@@ -295,7 +293,7 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
               ai->st.targetPointY = ball_y - (ai->st.shootingVectorY * KICK_POSITION_DISTANCE);
 
               // calculate the vector of the bot to the target point
-              calculateTargetPointVector(ai, &ai->st.targetPointX, &ai->st.targetPointY, &ai->st.targetPointVectorX, &ai->st.targetPointVectorY, ai->st.botCol);
+              calculateTargetPointVector(ai, &ai->st.targetPointX, &ai->st.targetPointY, &ai->st.targetPointVectorX, &ai->st.targetPointVectorY, ai->st.side);
             }
           }
         }
