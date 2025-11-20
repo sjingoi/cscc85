@@ -413,16 +413,18 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
             printf("Distance: %f \n", dist_to_ball);
 
             // Slow down when close
-            int power;
+            int power, turn_smooth;
 
             if (dist_to_ball < slow_dist) {
                 power = slow_speed;
+                turn_smooth = 10;
             }
             else {
                 power = fast_speed;
+                turn_smooth = 10;
             }
 
-            go_to_point(ai, power, ballx, bally);
+            go_to_point(ai, power, turn_smooth, ballx, bally);
 
             printf("ball x %f ball y %f  dist: %f  power: %d\n",
                   ballx, bally, dist_to_ball, power);
