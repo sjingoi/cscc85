@@ -217,8 +217,7 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
     clean_heading(ai, &old_dx, &old_dy);
     // update variables for bot and opponent
     double gx, gy, ogx, ogy;
-    update_vars(ai, &gx, &gy, &ai->st.shootingVectorX, &ai->st.shootingVectorY, 0);
-    update_vars(ai, &ogx, &ogy, &ai->st.oShootingVectorX, &ai->st.oShootingVectorY, 1);
+    update_vars(ai);
     
     // printf("Driving dir: %d\n", ai->st.driving_dir);
     // printf("Facing direction: %f %f\n", ai->st.fxm, ai->st.fym);
