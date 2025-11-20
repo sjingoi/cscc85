@@ -242,21 +242,32 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
       switch(ai->st.state) {
         // Go to defence kick position
         case 1:
-          move_forward(35, ai);
-          break;
-        case 11:
-          go_to_point(ai, 50, defense_target_x, defense_target_y);
-          break;
-        
+        {
+          // Set up the environment variables
+          update_vars(struct RoboAI *ai);
+
+          // Update the defensive positon that is somepoint along the vector ebtween the ball and the goal the opponent scores into
+          updateTargetDefensivePosition(ai);
+
+          // Calculate the distance between the bot and the target defensive position
+          int distance = 0;
+          distance = point_distance(ai->st.self->cx, ai->st.self->cy, ai->st.targetPointX, ai->st.targetPointY);
+          if (distance > dis_th) {
+            go_to_point(ai, 50, ai->st.targetPointX, ai->st.targetPointY);
+          } else {
+            // We are close enough to the target point
+            // Stop moving and now align to the shooting vector
+            stop_moving(ai);
+
+            // Transition to the attacking state
+            ai->st.state = 21;
+          }
+        }
+
         // This is the moving towards a point along the vector of point behind the bot to the ball
         case 21:
         {
-          printf("Move towards ball...\n");
-          stop_moving(ai);
-          // Similar implementation to penalty
-          // Keep calculating what a good vector to get the ball into the goal is and move towards
-          // Exit this state once we are along that vector
-          break;
+          // Now our next move is moving toward the shooting point
         }
 
         // This is kicking the ball
@@ -284,7 +295,6 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
               // Get ball position
               double ball_x = ai->st.ball->cx;
               double ball_y = ai->st.ball->cy;
-              
               // Calculate target point: ball position - (shooting_vector * distance)
               // The shooting vector points from ball to goal, so we go opposite to be behind the ball
               ai->st.targetPointX = ball_x - (ai->st.shootingVectorX * KICK_POSITION_DISTANCE);
