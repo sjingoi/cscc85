@@ -215,8 +215,6 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
     convert_to_metric(ai);
     clean_heading(ai, &old_dx, &old_dy);
     determine_facing(ai);
-    // update variables for bot and opponent
-    double gx, gy, ogx, ogy;
     update_vars(ai);
     
     // printf("Driving dir: %d\n", ai->st.driving_dir);
