@@ -311,6 +311,13 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
 
       case 102:
       {
+        // Check if self blob is available - if not, stop and return
+        if (ai->st.self == NULL) {
+          fprintf(stderr, "[102] Warning: Self blob not found, stopping\n");
+          stop_moving(ai);
+          return;
+        }
+        
         double goal_x, goal_y;
         // This state will constantly realign or drive forward until we are within epsilon of the target point
         // Motors are started to driving forward here then we transition to state 103
@@ -466,6 +473,12 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
 
 void clean_heading(struct RoboAI *ai, double *old_dx, double *old_dy) {
   // --- Stabilize robot heading vector ---
+  
+  // Check if self blob is available
+  if (ai->st.self == NULL) {
+    fprintf(stderr, "[clean_heading] Warning: Self blob not found, stopping\n");
+    return;  // Can't clean heading without self blob
+  }
 
     double ndx = ai->st.self->dx;
     double ndy = ai->st.self->dy;
