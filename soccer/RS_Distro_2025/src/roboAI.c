@@ -365,7 +365,7 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
       double dist_to_ball = point_distance(myx, myy, ballx, bally);
 
       double fast_speed = 50;
-      double slow_speed = 25;
+      double slow_speed = 35;
       double slow_dist  = 20;   // meters (20 cm)
 
       switch(ai->st.state) {
