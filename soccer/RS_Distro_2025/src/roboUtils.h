@@ -17,3 +17,5 @@ int calculateGoalPosition(struct RoboAI *ai, double *goal_x, double *goal_y, int
 int calculateTargetPointVector(struct RoboAI *ai, double *targetPointX, double *targetPointY, double *vectorX, double *vectorY, int team);
 double f_angle(double x1, double y1, double x2, double y2);
 void update_vars(struct RoboAI *ai);
+double point_distance(double x1, double y1, double x2, double y2);
+void updateTargetDefensivePosition(struct RoboAI *ai);
