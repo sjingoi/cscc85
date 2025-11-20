@@ -23,13 +23,12 @@ void turn_radius(int pw, double turn_rad, int dir, struct RoboAI *ai) {
 /**
  * Goes to a point
  */
-void go_to_point(struct RoboAI *ai, int power, double target_x, double target_y) {
+void go_to_point(struct RoboAI *ai, int power, double turn_smoothness, double target_x, double target_y) {
   double dir_x = target_x - ai->st.spxm; // X direction to 
   double dir_y = target_y - ai->st.spym;
   normalize_vector(&dir_x, &dir_y);
   double angle_delta = angle_diff(ai->st.fa, atan2(dir_y, dir_x)); 
-  double a = 10; // P-controller variable
-  turn_radius(power, a/(angle_delta * angle_delta), (angle_delta < 0) ? 0 : 1, ai);
+  turn_radius(power, turn_smoothness/(angle_delta * angle_delta), (angle_delta < 0) ? 0 : 1, ai);
 }
 
 void move_forward(int pw, struct RoboAI *ai) {

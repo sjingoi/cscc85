@@ -245,7 +245,7 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
           move_forward(35, ai);
           break;
         case 11:
-          go_to_point(ai, 50, defense_target_x, defense_target_y);
+          go_to_point(ai, 50, 10, defense_target_x, defense_target_y);
           break;
         
         // This is the moving towards a point along the vector of point behind the bot to the ball
@@ -268,105 +268,75 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
 
       }
     } else if (ai->st.state < 200) {
+      double offense_target_x = (ai->st.side == 0) ? 170.0 : 0;
+      double offense_target_y = 115.0 / 2.0;
+
+      double targetPointVectorX = offense_target_x - ai->st.bpxm;
+      double targetPointVectorY = offense_target_y - ai->st.bpym;
+
+      printf("offense_target_x: %f\n", offense_target_x);
+      printf("offense_target_y: %f\n", offense_target_y);
+      printf("Ball pos x: %f\n", ai->st.bpxm);
+      printf("Ball pos y: %f\n", ai->st.bpym);
+      printf("targetPointVectorX: %f\n", targetPointVectorX);
+      printf("targetPointVectorY: %f\n", targetPointVectorY);
+      normalize_vector(&targetPointVectorX, &targetPointVectorY);
+
+      double kick_dist = 25.0;
+      double kick_point_x = ai->st.bpxm - targetPointVectorX * kick_dist;
+      double kick_point_y = ai->st.bpym - targetPointVectorY * kick_dist;
+      double kick_point_dist = norm(ai->st.spxm - kick_point_x, ai->st.spym - kick_point_y);
+      double ball_speed = norm(ai->st.bvxm, ai->st.bvym);
+
+      double da = angle_diff(ai->st.fa, atan2(offense_target_y - ai->st.spym, offense_target_x - ai->st.spxm));
+      printf("Ball sped: %f\n", ball_speed);
+      
+
+      printf("Ball point %f %f\n", offense_target_y, ai->st.bpym);
+      printf("Dist %f\n", kick_point_dist);
+      printf("DA: %f\n", da);
+
+
       switch(ai->st.state) {
-        printf("Penalty state");
         case 101:
-        // Sets the shooting vector of the ball to the goal (lets just assume that it will not fail right now)
-        {
-          double goal_x, goal_y;
-          calculateGoalPosition(ai, &goal_x, &goal_y, ai->st.side);
+          // Go to shooting position coarse
+          if (kick_point_dist < 16.0) ai->st.state = 102;
+          break;
+        case 102:
+          // Go to shooting position fine tune
+          if (kick_point_dist < 5.0) ai->st.state = 103;
+          break;
+        case 103:
+          // Go to shooting position fine tune
+          if (da < 0.02) ai->st.state = 104;
+          break;
+        case 104:
+          if (ball_speed > 0.5) ai->st.state = 105;
+          break;
+      }
 
-          if (calculateShootingVector(ai, &goal_x, &goal_y, &ai->st.shootingVectorX, &ai->st.shootingVectorY, ai->st.side)) {
-            // Set the vector needed for the bot to reach a target point that is x distance from the ball
-            // Using the shooting vector, extend x distance from the ball in the OPPOSITE direction of the shooting vector
-            // (behind the ball) so the bot can approach and kick the ball forward
-            if (ai->st.ball != NULL && ai->st.ballID == 1) {
-              // Get ball position
-              double ball_x = ai->st.ball->cx;
-              double ball_y = ai->st.ball->cy;
-              
-              // Calculate target point: ball position - (shooting_vector * distance)
-              // The shooting vector points from ball to goal, so we go opposite to be behind the ball
-              ai->st.targetPointX = ball_x - (ai->st.shootingVectorX * KICK_POSITION_DISTANCE);
-              ai->st.targetPointY = ball_y - (ai->st.shootingVectorY * KICK_POSITION_DISTANCE);
+      printf("Current state: %d\n", ai->st.state);
 
-              // calculate the vector of the bot to the target point
-              calculateTargetPointVector(ai, &ai->st.targetPointX, &ai->st.targetPointY, &ai->st.targetPointVectorX, &ai->st.targetPointVectorY, ai->st.side);
-            }
-          }
-        }
-        
-        // We now have:
-        // - The shooting vector of the ball to the goal
-        // - The target point for the bot to reach
-        // - The vector of the bot to the target point
-        
-        // Transition to state 102: Pathing to the target point
-        ai->st.state = 102;
-        break;
-
-      case 102:
-        // Code to align to the target point based off heading
-        // Calculate the vector of the bot to the target point
-        // Motors are started to driving forward here then we transition to state 103
-        {
-          int aligned = turn_towards_dir(ai, ai->st.targetPointVectorX, ai->st.targetPointVectorY);
-          if (aligned) {
-            ai->st.state = 103;
-            move_forward(30, ai);
-          }
-        }
-        break;
-      case 103:
-      {
-
-        // Code to drive to that point until we are within epsilon
-        // Motors are stopped once we are within epsilon of the point and initiate a turn then transition to state 104
-        int at_target = calculatePointsWithinEpsilon(&ai->st.self->cx, &ai->st.self->cy, &ai->st.targetPointX, &ai->st.targetPointY,40);
-
-        
-        if (at_target) {
-          printf("here\n");
-          ai->st.state = 104;
+      switch(ai->st.state) {
+        case 101:
+          go_to_point(ai, 100, 10, kick_point_x, kick_point_y);
+          break;
+        case 102:
+          go_to_point(ai, 30, 3, kick_point_x, kick_point_y);
+          break;
+        case 103:
+          go_to_point(ai, 10, 0, offense_target_x, offense_target_y);
+          break;
+        case 104:
+          go_to_point(ai, 100, 10, offense_target_x, offense_target_y);
+          break;
+        case 105: 
           stop_moving(ai);
-        }
-      }
-        break;
-      case 104: 
-      {
-        // Code to align to the heading of the goal based off the shooting vector
-        // Check if we are aligned along the shooting vector
-        // If aligned stop motors and transition to state 105
-        printf("Turning...\n");
-        int aligned = turn_towards_dir(ai, ai->st.shootingVectorX, ai->st.shootingVectorY);
-        printf("Aligned: %d\n", aligned);
-        if (aligned) {
-          ai->st.state = 105;
+          break;
+        default:
           stop_moving(ai);
-        }
-
+          break;
       }
-        break;
-      case 105:
-        {// Code to kick the ball
-        BT_drive(MOTOR_A, MOTOR_D, 100);
-        int current = calculatePointsWithinEpsilon(&ai->st.self->cx, &ai->st.self->cy, &ai->st.targetPointX, &ai->st.targetPointY, 10);
-        if (current) {
-          printf("here\n");
-          ai->st.state = 104;
-          stop_moving(ai);
-        }
-      }
-        break;
-      case 106:
-      {
-        // Code to end
-        printf("Succesful kick?");
-        stop_moving(ai);
-        break;
-      }
-      break;
-    }
     } else if (ai->st.state < 300) {
       printf("Chase ball\n");
 

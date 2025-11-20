@@ -5,7 +5,7 @@
  */
 void turn_radius(int pw, double turn_rad, int dir, struct RoboAI *ai);
 
-void go_to_point(struct RoboAI *ai, int power, double target_x, double target_y);
+void go_to_point(struct RoboAI *ai, int power, double turn_smoothness, double target_x, double target_y);
 
 void move_forward(int pw, struct RoboAI *ai);
 
