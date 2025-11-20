@@ -215,15 +215,10 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
       double defense_target_x = (ai->st.side == 0) ? def_dist : 170.0 - def_dist;
       double defense_target_y = 115.0 / 2.0;
       double distance = norm(ai->st.spxm - defense_target_x, ai->st.spym - defense_target_y);
-      double defense_dir_x = defense_target_x - ai->st.spxm; // X direction to 
-      double defense_dir_y = defense_target_y - ai->st.spym;
-      normalize_vector(&defense_dir_x, &defense_dir_y);
 
       switch(ai->st.state) {
         case 1:
-          if (ai->st.driving_dir == 1) {
-            ai->st.state = 11;
-          }
+          if (ai->st.driving_dir == 1) ai->st.state = 11;
           break;
         case 11:
           if (distance < 5) ai->st.state = 21;
@@ -235,26 +230,11 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
       switch(ai->st.state) {
         // Go to defence kick position
         case 1:
-        {
           move_forward(35, ai);
           break;
-        }
         case 11:
-        {
-          double angle_delta = angle_diff(ai->st.fa, atan2(defense_dir_y, defense_dir_x)); 
-          double a = 10;
-          printf("====================\n");
-          printf("Driving: %d\n", ai->st.driving_dir);
-          printf("Target_angle: %f\n", atan2(defense_dir_y, defense_dir_x));
-          printf("Current angle:%f\n", ai->st.fa);
-          printf("Position: X: %f, Y: %f\n", ai->st.spxm, ai->st.spym);
-          printf("Target: X: %f, Y: %f\n", defense_target_x, defense_target_y);
-          printf("Distance: %f\nAngle Delta: %f\nDir: %d\n", distance, angle_delta, (angle_delta < 0) ? 0 : 1);
-          // stop_moving(ai);
-          // move_forward(35, ai);
-          turn_radius(50, a/(angle_delta * angle_delta), (angle_delta < 0) ? 0 : 1, ai);
+          go_to_point(ai, 50, defense_target_x, defense_target_y);
           break;
-        }
         
         // This is the moving towards a point along the vector of point behind the bot to the ball
         case 21:

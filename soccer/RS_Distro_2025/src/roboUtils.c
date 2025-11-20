@@ -45,7 +45,7 @@ double angle_diff(double angle, double target_angle) {
     angle = normalize_angle(angle);
     target_angle = normalize_angle(target_angle);
 
-    double diff = fmod(angle - target_angle + M_PI, 2*M_PI);
+    double diff = fmod(target_angle - angle  + M_PI, 2*M_PI);
     if (diff < 0) diff += 2*M_PI;
     return diff - M_PI;
 }
@@ -65,7 +65,7 @@ void determine_facing(struct RoboAI *ai) {
     }
   }
   normalize_vector(&ai->st.fxm, &ai->st.fym);
-  ai->st.fa = atan2(ai->st.fym, ai->st.fxm) * 180 / 3.14159;
+  ai->st.fa = atan2(ai->st.fym, ai->st.fxm);
 }
 
 double dot(double x1, double y1, double x2, double y2) {
