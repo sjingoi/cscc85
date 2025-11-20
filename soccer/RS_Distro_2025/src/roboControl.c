@@ -42,13 +42,13 @@ int turn_towards_dir(struct RoboAI *ai, double t_dir_x, double t_dir_y) {
 
   double sx = ai->st.sdx;
   double sy = ai->st.sdy;
-  double theta_th = 0.2;      // cos(angle threshold)
+  double theta_th = 0.1;      // cos(angle threshold)
   int turn_pw     = 25;
 
   normalize_vector(&t_dir_x, &t_dir_y);
   normalize_vector(&sx, &sy);
 
-  double c_theta = t_dir_x * sx + t_dir_y * sy;
+  double c_theta = abs(t_dir_x * sx + t_dir_y * sy);
 
   // if (c_theta < 0) {
   //   fprintf(stderr, "[201] Facing away, turn 180.\n");

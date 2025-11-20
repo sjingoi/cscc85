@@ -15,4 +15,4 @@ int calculatePointsWithinEpsilon(double *x1, double *y1, double *x2, double *y2,
 int calculateGoalPosition(struct RoboAI *ai, double *goal_x, double *goal_y, int team);
 int calculateTargetPointVector(struct RoboAI *ai, double *targetPointX, double *targetPointY, double *vectorX, double *vectorY, int team);
 double f_angle(double x1, double y1, double x2, double y2);
-void update_vars(struct RoboAI *ai, double *goal_x, double *goal_y, double *vec_x, double *vec_y, int team);
+void update_vars(struct RoboAI *ai, double *goal_x, double *goal_y);

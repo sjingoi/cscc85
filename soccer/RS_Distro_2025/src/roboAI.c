@@ -217,8 +217,7 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
     clean_heading(ai, &old_dx, &old_dy);
     // update variables for bot and opponent
     double gx, gy, ogx, ogy;
-    update_vars(ai, &gx, &gy, &ai->st.shootingVectorX, &ai->st.shootingVectorY, 0);
-    update_vars(ai, &ogx, &ogy, &ai->st.oShootingVectorX, &ai->st.oShootingVectorY, 1);
+    update_vars(ai, &gx, &gy);
     
     // printf("Driving dir: %d\n", ai->st.driving_dir);
     // printf("Facing direction: %f %f\n", ai->st.fxm, ai->st.fym);
@@ -318,10 +317,11 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
         update_vars(ai, &goal_x, &goal_y);
         int aligned = turn_towards_dir(ai, ai->st.targetPointVectorX, ai->st.targetPointVectorY);
         if (aligned) {
-          move_forward(30, ai);
+          move_forward(20, ai);
         } else {
           // We lost alignment so stop the motors from spinning
           stop_moving(ai);
+          break;
         }
 
         // Code to drive to that point until we are within epsilon
@@ -340,10 +340,13 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
         // Code to align to the heading of the goal based off the shooting vector
         // Check if we are aligned along the shooting vector
         // If aligned stop motors and transition to state 105
+        double goal_x, goal_y;
+        update_vars(ai, &goal_x, &goal_y);
         printf("Turning...\n");
         int aligned = turn_towards_dir(ai, ai->st.shootingVectorX, ai->st.shootingVectorY);
         printf("Aligned: %d\n", aligned);
         if (aligned) {
+          printf("Aligned to the shooting vector\n");
           ai->st.state = 104;
           stop_moving(ai);
         }

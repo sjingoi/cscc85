@@ -202,8 +202,8 @@ void update_vars(struct RoboAI *ai, double *goal_x, double *goal_y)
     calculateGoalPosition(ai, goal_x, goal_y, 0);
 
     // update shooting vector
-    int ok = calculateShootingVector(ai, goal_x, goal_y, &ai->st.shootingVectorX, &ai->st.shootingVectorY, 0);
-    if (!ok) {
+    int ok1 = calculateShootingVector(ai, goal_x, goal_y, &ai->st.shootingVectorX, &ai->st.shootingVectorY, 0);
+    if (!ok1) {
         // ball not visible — set vector to zero
         ai->st.shootingVectorX = 0;
         ai->st.shootingVectorY = 0;
@@ -213,8 +213,8 @@ void update_vars(struct RoboAI *ai, double *goal_x, double *goal_y)
     calculateGoalPosition(ai, goal_x, goal_y, 1);
     
     // update shooting vector for opponent team
-    int ok = calculateShootingVector(ai, goal_x, goal_y, &ai->st.oShootingVectorX, &ai->st.oShootingVectorY, 1);
-    if (!ok) {
+    int ok2 = calculateShootingVector(ai, goal_x, goal_y, &ai->st.oShootingVectorX, &ai->st.oShootingVectorY, 1);
+    if (!ok2) {
         // ball not visible — set vector to zero
         ai->st.oShootingVectorX = 0;
         ai->st.oShootingVectorY = 0;
