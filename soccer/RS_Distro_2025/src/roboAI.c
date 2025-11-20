@@ -328,6 +328,7 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
         // Code to drive to that point until we are within epsilon
         // Motors are stopped once we are within epsilon of the point and initiate a turn then transition to state 104
         int at_target = calculatePointsWithinEpsilon(&ai->st.self->cx, &ai->st.self->cy, &ai->st.targetPointX, &ai->st.targetPointY,250);
+
         
         if (at_target) {
           printf("here\n");
@@ -462,43 +463,34 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
  there.
 **********************************************************************************/
 
-void clean_heading(struct RoboAI *ai, double *old_dx, double *old_dy) {
-  // --- Stabilize robot heading vector ---
-
+void clean_heading(struct RoboAI *ai, double *old_dx, double *old_dy)
+{
+    // New raw blob heading
     double ndx = ai->st.self->dx;
     double ndy = ai->st.self->dy;
 
-    // Normalize new heading
     double mag = sqrt(ndx*ndx + ndy*ndy);
-    if (mag > 1e-6) { ndx /= mag; ndy /= mag; }
+    if (mag < 1e-6) return;   // ignore zero/noisy heading
 
-    // Motion vector
-    double mx = ai->st.self->mx;
-    double my = ai->st.self->my;
+    // Normalize
+    ndx /= mag;
+    ndy /= mag;
 
-    // Compare new heading to old stabilized heading
-    double a1 = fabs(f_angle(*old_dx, *old_dy, ndx, ndy));
+    // Compare new heading to old stabilized heading using dot product
+    double dotp = ndx * (*old_dx) + ndy * (*old_dy);
 
-    // // Compare new heading to motion direction
-    // double a2 = fabs(f_angle(mx, my, ndx, ndy));
-
-    if (a1 < 1.0) {
-        // New dx/dy is consistent
-        fix_dx = ndx;
-        fix_dy = ndy;
-    } else {
-        // New dx/dy flipped 180
-        printf("Fix angle");
-        fix_dx = -ndx;
-        fix_dy = -ndy;
+    // If dot < 0 the heading flipped 180º → reverse it
+    if (dotp < 0) {
+        ndx = -ndx;
+        ndy = -ndy;
     }
 
-    // Save stabilized direction
-    ai->st.sdx = fix_dx;
-    ai->st.sdy = fix_dy;
+    // Save clean/stable heading
+    ai->st.sdx = ndx;
+    ai->st.sdy = ndy;
 
-    *old_dx = fix_dx;
-    *old_dy = fix_dy;
+    *old_dx = ndx;
+    *old_dy = ndy;
 }
 
 double f_angle(double x1, double y1, double x2, double y2)
