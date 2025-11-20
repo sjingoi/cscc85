@@ -1,0 +1,157 @@
+CSCC85 - Fundamentals of Robotics and Automated Systems - UTSC
+
+Project 2 - Robot Localization
+______________________________________________________________________
+
+Team name:
+
+Name 1 (last, first): Jingoi, Sebastian
+Student number 1: 1009330733
+
+Name 2 (last, first): Liao, Leo
+Student number 2: 1009067885
+
+Name 3 (last, first): Velasquez, Isaiah
+Student number 3: 1009105825
+_______________________________________________________________________
+
+Q1) What is the total number of probabilities your robot has to keep
+track of for a map of size m x n?
+
+The total number of probabilities our robot has to keep track of for a map of size m × n is 4 × (m × n).
+This is because each location on the map can have four possible orientations (north, south, east, and west), 
+and the robot maintains a probability for each direction.
+
+Q2) What should be the initial value of the probabilities your robot is
+keeping track of?
+
+The initial probabilities are uniformly distributed because the robot initially has no knowledge of its exact position.
+Therefore, each location–direction pair is assigned an equal probability of 1 / (4 × m × n), reflecting complete uncertainty.
+
+Q3) Describe your strategy for dealing with sensor noise, and
+explain why it should work and how you tested it.
+
+Our strategy for handling sensor noise involves training the color sensor using a set of reference points representing all expected colors.
+When detecting a color, the robot compares the current HSV reading to the stored training data and selects the closest match using a nearest-neighbor 
+approach. This method works well because it reduces the impact of small fluctuations in sensor readings. We tested it by repeatedly scanning known 
+colors under different lighting conditions and verifying consistent classification accuracy.
+
+Q4) Describe your probability update function in detail and
+explain how you defined 'agreement' as well as how you
+Determined the amount by which to update probabilities.
+
+Our probability update function adjusts the belief of each possible location–direction pair based on whether the robot’s sensor observations agree with the map data.
+“Agreement” is defined as the correspondence between the expected color at a given location and the actual color detected by the sensor. When the observation agrees
+with the map, the corresponding probability is increased proportionally; when it disagrees, it is decreased. The magnitude of the update is determined using a Bayesian 
+update rule, normalizing all probabilities afterward so that they sum to one. This ensures the robot’s belief remains consistent and probabilistically sound.
+
+
+Q5) Describe in detail your robot’s exploration strategy – it should
+be more complex than simply moving in the same direction
+until hitting the boundary of the map. How did you choose this
+Strategy?
+
+Our robot’s exploration strategy begins by attempting to locate an edge of the map, which provides a fixed reference point. Once it reaches an edge, it proceeds in a 
+straight line, scanning intersections and updating its belief about its position as it moves. When it hits another boundary, it turns and continues in a new direction, 
+systematically covering the map. We chose this strategy because it provides a balance between coverage and efficiency, ensuring the robot gathers enough unique sensor 
+readings for reliable localization.
+
+Q6) Describe in detail how beliefs are shifted when the robot gets
+to a boundary. Consider this problem carefully, the correct
+way to handle this is not obvious. Explain clearly what
+assumptions regarding the robot's motion support your
+strategy for shifting belief values in this case.
+
+When the robot hits a boundary, it reverses to the previous intersection, updates its beliefs to reflect the boundary constraint, and then rotates 90° to the 
+left before continuing. This approach assumes the robot’s motion is reliable and that it can accurately detect when it reaches the boundary. By returning to the 
+previous intersection, the robot avoids accumulating localization errors that could occur if it attempted to continue from an invalid position beyond the boundary.
+
+Q7) Describe in detail how beliefs are shifted when the robot turns
+90 degrees (either left or right) without going to a different
+Intersection. Describe your assumptions about robot motion,
+and how these support your strategy for handling this case.
+
+When the robot turns 90 degrees at an intersection, it records the new orientation but does not immediately update its positional belief.
+Instead, it waits until it has moved to the next intersection to apply the update, ensuring that belief changes are based on confirmed motion and observations.
+This assumption relies on consistent turning behavior, allowing the robot to maintain an accurate internal representation of its direction before updating its 
+overall probability distribution.
+
+Q8) Explain your method for deciding when the robot has achieved
+correct localization.
+
+We determine that the robot has achieved correct localization when one particular location–direction pair’s probability becomes significantly higher than all 
+others, typically around 50% or greater. At this point, the robot has accumulated enough consistent sensor and motion data to confidently identify its 
+position on the map.
+
+Q9) Briefly explain your robot design choices, including sensor placement
+and robot mobility considerations.
+
+Our robot uses rubber treads instead of standard wheels to minimize slippage and rotational drift. A small front-mounted weight was added to balance the 
+robot’s initially rear-heavy design, improving its rotational accuracy. The color sensor is mounted low and near the front to maximize color detection 
+accuracy, while the gyro sensor is placed at the robot’s center to ensure stable and consistent rotation measurements. Together, these design choices 
+enhance both motion precision and sensor reliability.
+
+Q10) What parameters did you find affect the most the ability of the robot to
+determine its location?
+
+The most critical factor affecting localization accuracy was sensor noise, particularly from the gyro sensor.
+This sensor was essential for maintaining correct orientation between intersections, but frequent drift and calibration errors often caused inaccurate turns and readings.
+These issues introduced uncertainty into the localization process and required frequent recalibration.
+
+Q11) Can external factors (illumination in the room, for example) affect the
+ability of the robot to find itself?
+
+Yes, environmental illumination has a significant effect on the robot’s ability to detect colors accurately.
+Because the color sensor was calibrated under specific lighting conditions, changes in brightness or light source color can cause the detected HSV values to deviate from the training data.
+This discrepancy can lead to misclassification and hinder accurate localization.
+
+Q12) On average, how many intersections does your robot need to visit
+to achieve successful localization?
+
+Based on experimental testing, the robot typically achieves successful localization after visiting three to five intersections.
+At that point, enough sensor data has been gathered to distinguish between similar map locations and converge on a confident belief distribution.
+
+Q13) Are there locations in the map that make localization harder? (i.e.
+does it matter where your robot starts its journey? Why?)
+
+We found that initial location does not significantly affect localization difficulty.
+Our exploration and scanning strategy allows the robot to gather sufficient information regardless of its starting point.
+Since it systematically explores edges and intersections, it can localize itself effectively from any initial position.
+
+-- Bonus --
+Did we understand:
+
+1) The main steps of a robot localization algorithm
+
+Yes, completing this project gave us a strong understanding of the main steps in a localization algorithm, including motion updates, sensor updates, and belief normalization.
+It also helped us appreciate how each step contributes to the robot’s ability to estimate its position in uncertain conditions.
+
+2) Dealing with real-world sensors
+
+Yes, we gained practical experience dealing with the limitations of real-world sensors, including noise, calibration drift, and outright hardware failures.
+These challenges forced us to design software-level compensations and perform frequent recalibrations to ensure reliable results.
+
+3) Dealing with real-world motors and robot motions
+
+Yes, we learned how mechanical imperfections affect motion accuracy.
+For instance, friction and torque inconsistencies during turns led us to switch from standard wheels to rubber treads, greatly improving rotational precision.
+
+4) Using probabilities to keep track of belief about a robot's position
+
+Yes, we developed a clear understanding of probabilistic reasoning in localization.
+By gradually increasing the confidence in specific positions as new data was collected, we saw firsthand how probabilistic models help handle uncertainty in real environments.
+
+5) Managing uncertainty (e.g., in the quality of sensor readings, or accuracy of robot motions)
+
+Yes, managing uncertainty was one of the most challenging but educational aspects of the project.
+We had to constantly adjust for noisy gyro readings and unreliable color detections, leading us to design adaptive filtering and robust update strategies.
+
+6) Do you feel confident you could implement a probabilistic localization algorithm for a more complex robot, working in a real-world environment?
+
+We feel somewhat confident in implementing a more complex probabilistic localization algorithm.
+Success would depend heavily on the quality and reliability of the sensors and hardware provided, as high noise or poor calibration can easily undermine performance in real-world conditions.
+
+7) Any other comments regarding your experience with this project?
+
+We encountered numerous hardware-related challenges, especially with the sensors provided.
+Despite these setbacks, the project was an invaluable learning experience that strengthened our understanding of probabilistic robotics and real-world implementation issues.
