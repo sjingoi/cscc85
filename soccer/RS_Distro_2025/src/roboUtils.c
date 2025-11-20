@@ -188,19 +188,33 @@ int calculateWheelSpeedRatio(double *arcDiameter, double *ratio) {
   return 1;
 }
 
-void update_vars(struct RoboAI *ai, double *goal_x, double *goal_y, double *vec_x, double *vec_y, int team)
-{
+void update_vars(struct RoboAI *ai)
+{ 
+  int oteam;
+  if (ai->st.botCol == 0) {
+    oteam = 1;
+  }  else {
+    oteam = 0;
+  }
     // update facing direction
     determine_facing(ai);
 
     // update goal position
-    calculateGoalPosition(ai, goal_x, goal_y, team);
+    calculateGoalPosition(ai, &(ai->st.goalx), &(ai->st.goaly), ai->st.botCol);
+    calculateGoalPosition(ai, &(ai->st.ogoalx), &(ai->st.ogoaly), oteam);
 
     // update shooting vector
-    int ok = calculateShootingVector(ai, goal_x, goal_y, vec_x, vec_y, team);
-    if (!ok) {
+    int ok1 = calculateShootingVector(ai, &(ai->st.goalx), &(ai->st.goaly), &ai->st.shootingVectorX, &ai->st.shootingVectorY, oteam);
+    if (!ok1) {
         // ball not visible — set vector to zero
-        *vec_x = 0;
-        *vec_y = 0;
+        ai->st.shootingVectorX = 0;
+        ai->st.shootingVectorY = 0;
+    }
+
+    int ok2 = calculateShootingVector(ai, &(ai->st.ogoalx), &(ai->st.ogoaly), &ai->st.oShootingVectorX, &ai->st.oShootingVectorY, oteam);
+    if (!ok2) {
+        // ball not visible — set vector to zero
+        ai->st.oShootingVectorX = 0;
+        ai->st.oShootingVectorY = 0;
     }
 }

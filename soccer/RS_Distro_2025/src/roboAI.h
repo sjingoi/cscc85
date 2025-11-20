@@ -118,6 +118,9 @@ struct AI_data{
 	// Target point for positioning before kick (x distance behind the ball along shooting vector)
 	double targetPointX, targetPointY;
 	double targetPointVectorX, targetPointVectorY;
+
+	double goalx, goaly;
+	double ogoalx, ogoaly;
 };
 
 struct RoboAI {
