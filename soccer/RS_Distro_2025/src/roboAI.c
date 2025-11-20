@@ -311,7 +311,7 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
           if (da < 0.02) ai->st.state = 104;
           break;
         case 104:
-          if (ball_speed > 0.5) ai->st.state = 105;
+          if (ball_speed > 7) ai->st.state = 105;
           break;
       }
 
@@ -319,7 +319,7 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
 
       switch(ai->st.state) {
         case 101:
-          go_to_point(ai, 100, 10, kick_point_x, kick_point_y);
+          go_to_point(ai, 65, 10, kick_point_x, kick_point_y);
           break;
         case 102:
           go_to_point(ai, 30, 3, kick_point_x, kick_point_y);
