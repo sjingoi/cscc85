@@ -76,6 +76,13 @@ double norm(double x, double y) {
   return sqrt(dot(x, y, x, y));
 }
 
+// This calculates the distance between two points
+double point_distance(double x1, double y1, double x2, double y2) {
+  double dx = x1 - x2;
+  double dy = y1 - y2;
+  return sqrt(dx*dx + dy*dy);
+}
+
 void normalize_vector(double *x, double *y) {
     double mag = sqrt((*x)*(*x) + (*y)*(*y));
     if (mag > 1e-6) { *x /= mag; *y /= mag; }
@@ -237,4 +244,25 @@ void update_vars(struct RoboAI *ai)
         ai->st.oShootingVectorX = 0;
         ai->st.oShootingVectorY = 0;
     }
+}
+
+// Calculate a location to go to which is the midpoint along their shooting vector between the ball and the goal
+void updateTargetDefensivePosition(struct RoboAI *ai) {
+  // Assume that we just calculated all the vectors so just use the values within the struct
+
+  // Get ball position
+  double ball_x = ai->st.ball->cx;
+  double ball_y = ai->st.ball->cy;
+
+  // Get the position of our goal
+  double goal_x, goal_y;
+  calculateGoalPosition(ai, &goal_x, &goal_y, ai->st.side);
+
+  // Set target point to the midpoint between the ball and our goal
+  ai->st.targetPointX = (ball_x + goal_x) / 2;
+  ai->st.targetPointY = (ball_y + goal_y) / 2;
+}
+
+bool shootingPathClear(struct RoboAI *ai) {
+  
 }
