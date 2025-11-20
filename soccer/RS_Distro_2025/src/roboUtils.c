@@ -266,5 +266,5 @@ void updateTargetDefensivePosition(struct RoboAI *ai) {
 }
 
 void updateEnemyDistance(struct RoboAI *ai) {
-  ai->st.enemyDistance = point_distance(ai->st.opp->cx, ai->st.opp->cy, ai->st.self->cx,  ai->st.self->cy);
+  ai->st.enemyDistance = point_distance(ai->st.opxm, ai->st.opym, ai->st.spxm,  ai->st.spym);
 }
