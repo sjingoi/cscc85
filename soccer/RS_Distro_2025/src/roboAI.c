@@ -39,7 +39,7 @@ double o_dx, o_dy;
 double theta_th = 0.3;      // cos(angle threshold)
 double dis_th   = 50;       // distance threshold
 int drive_pw    = 30;
-int turn_pw     = 30;
+int turn_pw     = 20;
 
 // Distance from ball to position bot for kick (in pixels) we can update this later
 #define KICK_POSITION_DISTANCE 200.0
@@ -315,13 +315,15 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
         // This state will constantly realign or drive forward until we are within epsilon of the target point
         // Motors are started to driving forward here then we transition to state 103
         update_vars(ai, &goal_x, &goal_y);
-        int aligned = turn_towards_dir(ai, ai->st.targetPointVectorX, ai->st.targetPointVectorY);
-        if (aligned) {
-          move_forward(20, ai);
+        
+        // Get the degree difference between the bot's heading and the target point vector
+        double heading_difference = calculateHeadingDifference(ai->st.fa, ai->st.targetPointVectorX, ai->st.targetPointVectorY);
+        if (heading_difference > 5) {
+          turn_left(turn_pw);
+        } else if (heading_difference < -5) {
+          turn_right(turn_pw);
         } else {
-          // We lost alignment so stop the motors from spinning
-          stop_moving(ai);
-          break;
+          move_forward(20, ai);
         }
 
         // Code to drive to that point until we are within epsilon

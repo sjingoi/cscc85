@@ -176,15 +176,29 @@ int calculatePointsWithinEpsilon(double *x1, double *y1, double *x2, double *y2,
     return 0;
 }
 
-// Calculate if two headings are within a given angle epsilon (can be radian or degree just pick one and modify this function)
-int calculateHeadingDifference(double *heading1, double *heading2, double epsilon) {
-    // Calculate the difference between the two headings
-    double difference = fabs(*heading1 - *heading2);
-    // Check if the difference is within the epsilon
-    if (difference <= epsilon) {
-        return 1;
+// Calculate the degrees that need to be turned to match a vector
+// Given the robot's current direction, calculate how many degrees to turn to match the shootingVector
+// Returns: angle difference in degrees (positive = turn right/counter-clockwise, negative = turn left/clockwise)
+//          Range: [-180, 180]
+double calculateHeadingDifference(double currentHeading, double vectorX, double vectorY) {
+    // Calculate the angle of the target vector in degrees
+    // atan2 returns angle in radians, convert to degrees
+    // Note: atan2(y, x) gives angle from positive x-axis
+    double targetAngle = atan2(vectorY, vectorX) * 180.0 / 3.14159;
+    
+    // Calculate the raw difference
+    double difference = targetAngle - currentHeading;
+    
+    // Normalize to [-180, 180] range to get the shortest turn angle
+    // This handles wrap-around (e.g., if current is 170° and target is -170°, difference should be 20°, not 340°)
+    while (difference > 180.0) {
+        difference -= 360.0;
     }
-    return 0;
+    while (difference < -180.0) {
+        difference += 360.0;
+    }
+    
+    return difference;
 }
 
 // Some helper to calculate the ratio of wheel speed needed to turn an arc of a circle of diameter x
