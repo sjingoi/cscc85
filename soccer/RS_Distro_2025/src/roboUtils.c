@@ -40,14 +40,9 @@ void determine_facing(struct RoboAI *ai) {
     ai->st.fxm = ai->st.svxm;
     ai->st.fym = ai->st.svym;
   } else {
-    // When driving slow, use the last facing direction to determine which way our bot is facing.
-    if (dot(ai->st.fxm, ai->st.fym, ai->st.sdxm, ai->st.sdym) < 0) {
-      ai->st.fxm = ai->st.sdxm * -1;
-      ai->st.fym = ai->st.sdym * -1;
-    } else {
-      ai->st.fxm = ai->st.sdxm;
-      ai->st.fym = ai->st.sdym;
-    }
+    // When slow, just use the stabilized heading
+    ai->st.fxm = ai->st.sdxm;
+    ai->st.fym = ai->st.sdym;
   }
   normalize_vector(&ai->st.fxm, &ai->st.fym);
   ai->st.fa = atan2(ai->st.fym, ai->st.fxm) * 180 / 3.14159;
