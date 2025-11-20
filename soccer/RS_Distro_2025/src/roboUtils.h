@@ -14,6 +14,6 @@ int calculateShootingVector(struct RoboAI *ai, double *goal_x, double *goal_y, d
 int calculatePointsWithinEpsilon(double *x1, double *y1, double *x2, double *y2, double epsilon);
 int calculateGoalPosition(struct RoboAI *ai, double *goal_x, double *goal_y, int team);
 int calculateTargetPointVector(struct RoboAI *ai, double *targetPointX, double *targetPointY, double *vectorX, double *vectorY, int team);
-double calculateHeadingDifference(double currentHeading, double vectorX, double vectorY);
+double calculateHeadingDifference(struct RoboAI *ai, double vectorX, double vectorY);
 double f_angle(double x1, double y1, double x2, double y2);
 void update_vars(struct RoboAI *ai, double *goal_x, double *goal_y);

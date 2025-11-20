@@ -180,14 +180,17 @@ int calculatePointsWithinEpsilon(double *x1, double *y1, double *x2, double *y2,
 // Given the robot's current direction, calculate how many degrees to turn to match the shootingVector
 // Returns: angle difference in degrees (positive = turn right/counter-clockwise, negative = turn left/clockwise)
 //          Range: [-180, 180]
-double calculateHeadingDifference(double currentHeading, double vectorX, double vectorY) {
+double calculateHeadingDifference(struct RoboAI *ai, double vectorX, double vectorY) {
     // Calculate the angle of the target vector in degrees
     // atan2 returns angle in radians, convert to degrees
     // Note: atan2(y, x) gives angle from positive x-axis
     double targetAngle = atan2(vectorY, vectorX) * 180.0 / 3.14159;
     
+    // Calculate the current heading angle from sdx and sdy
+    double currentAngle = atan2(ai->st.sdy, ai->st.sdx) * 180.0 / 3.14159;
+    
     // Calculate the raw difference
-    double difference = targetAngle - currentHeading;
+    double difference = targetAngle - currentAngle;
     
     // Normalize to [-180, 180] range to get the shortest turn angle
     // This handles wrap-around (e.g., if current is 170° and target is -170°, difference should be 20°, not 340°)
@@ -234,6 +237,6 @@ void update_vars(struct RoboAI *ai, double *goal_x, double *goal_y)
         ai->st.oShootingVectorY = 0;
     }
 
-    ai->st.target_point_turning_degrees_required = calculateHeadingDifference(ai->st.fa, ai->st.targetPointVectorX, ai->st.targetPointVectorY);
-    ai->st.shooting_turning_degrees_required = calculateHeadingDifference(ai->st.fa, ai->st.shootingVectorX, ai->st.shootingVectorY);
+    ai->st.target_point_turning_degrees_required = calculateHeadingDifference(ai, ai->st.targetPointVectorX, ai->st.targetPointVectorY);
+    ai->st.shooting_turning_degrees_required = calculateHeadingDifference(ai, ai->st.shootingVectorX, ai->st.shootingVectorY);
 }
