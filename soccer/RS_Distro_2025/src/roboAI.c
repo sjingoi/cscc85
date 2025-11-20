@@ -327,7 +327,7 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
 
         // Code to drive to that point until we are within epsilon
         // Motors are stopped once we are within epsilon of the point and initiate a turn then transition to state 104
-        int at_target = calculatePointsWithinEpsilon(&ai->st.self->cx, &ai->st.self->cy, &ai->st.targetPointX, &ai->st.targetPointY,250);
+        int at_target = calculatePointsWithinEpsilon(&ai->st.self->cx, &ai->st.self->cy, &ai->st.targetPointX, &ai->st.targetPointY,20);
 
         
         if (at_target) {
