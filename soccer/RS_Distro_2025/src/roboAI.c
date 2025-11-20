@@ -244,7 +244,7 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
         case 1:
         {
           // Set up the environment variables
-          update_vars(struct RoboAI *ai);
+          update_vars(ai);
 
           // Update the defensive positon that is somepoint along the vector ebtween the ball and the goal the opponent scores into
           updateTargetDefensivePosition(ai);
