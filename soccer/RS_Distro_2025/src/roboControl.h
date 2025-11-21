@@ -19,3 +19,6 @@ void turn_right(int pw);
  * Turn towards a direction vector. Returns 1 if aligned, 0 if not.
  */
 int turn_towards_dir(struct RoboAI *ai, double t_dir_x, double t_dir_y);
+
+
+void safe_go_to_point(struct RoboAI *ai, int power, double turn_smoothness, double target_x, double target_y);
