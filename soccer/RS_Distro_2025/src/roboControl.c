@@ -31,6 +31,67 @@ void go_to_point(struct RoboAI *ai, int power, double turn_smoothness, double ta
   turn_radius(power, turn_smoothness/(angle_delta * angle_delta), (angle_delta < 0) ? 0 : 1, ai);
 }
 
+void safe_go_to_point(struct RoboAI *ai, int power, double turn_smoothness, double target_x, double target_y) {
+  // check if the enemy is going to be along the path along the x axis or the y axis
+  double start_x = ai->st.spxm;
+  double start_y = ai->st.spym;
+
+  // if we detect a potential collision then move along the x or y axis instead so the next iteration detects no collision
+  double dx = target_x - start_x;
+  double dy = target_y - start_y;
+
+  double seg_length = point_distance(start_x, start_y, target_x, target_y);
+
+  // calculate the unit direction
+  double dir_x = dx / seg_length;
+  double dir_y = dy / seg_length;
+
+  // "draw" a circle around the enemy with some radius in metric
+  double enemy_x = ai->st.opxm;
+  double enemy_y = ai->st.opym;
+  double enemy_radius = 10.0; // 10 cm radius
+
+  // vector from enemy center to segment start
+  double f_x = start_x - enemy_x;
+  double f_y = start_y - enemy_y;
+
+  // solve quadratic equation
+  double b = 2 * (dir_x * f_x + dir_y * f_y);
+  double c = (f_x * f_x + f_y * f_y) - enemy_radius * enemy_radius;
+  double discriminant = b * b - 4 * c;
+
+  bool intersects = false;
+  if (discriminant >= 0) {
+    double sqrt_disc = sqrt(discriminant);
+    double t1 = (-b - sqrt_disc) / 2;
+    double t2 = (-b + sqrt_disc) / 2;
+    if ((t1 >= 0 && t1 <= seg_length) || (t2 >= 0 && t2 <= seg_length)) {
+      intersects = true;
+    }
+  }
+
+  // if we are not interesecting then go to point normally
+  if (!intersects) {
+    go_to_point(ai, power, turn_smoothness, target_x, target_y);
+    return;
+  }
+  
+  // we will default to moving along the axis that is further from us
+  if (dx > dy) {
+    // move along y axis if the enemy is too close to x
+    if (fabs(enemy_x - start_x) < enemy_radius) {
+      go_to_point(ai, power, turn_smoothness, target_x, start_y);
+    }
+    go_to_point(ai, power, turn_smoothness, start_x, target_y);
+  } else {
+    // move along x axis if the enemy is too close to our y
+    if (fabs(enemy_y - start_y) < enemy_radius) {
+      go_to_point(ai, power, turn_smoothness, start_x, target_y);
+    }
+    go_to_point(ai, power, turn_smoothness, target_x, start_y);
+  }
+}
+
 void move_forward(int pw, struct RoboAI *ai) {
   if (norm(ai->st.svxm, ai->st.svym) > 1.5 && pw > 10) {
     ai->st.driving_dir = 1;
