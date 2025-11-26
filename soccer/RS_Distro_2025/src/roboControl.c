@@ -49,7 +49,7 @@ void safe_go_to_point(struct RoboAI *ai, int power, double turn_smoothness, doub
   // "draw" a circle around the enemy with some radius in metric
   double enemy_x = ai->st.opxm;
   double enemy_y = ai->st.opym;
-  double enemy_radius = 10.0; // 10 cm radius
+  double enemy_radius = 20.0; // 10 cm radius
 
   // vector from enemy center to segment start
   double f_x = start_x - enemy_x;
@@ -75,6 +75,8 @@ void safe_go_to_point(struct RoboAI *ai, int power, double turn_smoothness, doub
     go_to_point(ai, power, turn_smoothness, target_x, target_y);
     return;
   }
+
+  printf("Avoiding collision...\n");
   
   // we will default to moving along the axis that is further from us
   if (dx > dy) {

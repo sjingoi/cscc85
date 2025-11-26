@@ -223,17 +223,48 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
 
     // States on this range are for soccer against the opponent
     if (ai->st.state < 100) {
-      double def_dist = 15.0;
-      double defense_target_x = (ai->st.side == 0) ? def_dist : 170.0 - def_dist;
-      double defense_target_y = 115.0 / 2.0;
-      double distance = norm(ai->st.spxm - defense_target_x, ai->st.spym - defense_target_y);
+      double our_net_x = ((ai->st.side == 0) ? 0 : 170.0);
+      double our_net_y = 115.0 / 2.0;
+      double defense_point_x = (ai->st.bpxm + our_net_x) / 2;
+      double defense_point_y = (ai->st.bpym + our_net_y) / 2;
+      double distance = norm(ai->st.spxm - defense_point_x, ai->st.spym - defense_point_y);
+
+      double opp_net_x = (ai->st.side == 0) ? 170.0 : 0;
+      double opp_net_y = 115.0 / 2.0;
+      double ball_opp_net_vec_x = opp_net_x - ai->st.bpxm;
+      double ball_opp_net_vec_y = opp_net_y - ai->st.bpym;
+      normalize_vector(&ball_opp_net_vec_x, &ball_opp_net_vec_y);
+      double kick_dist = 25.0;
+      double kick_point_x = ai->st.bpxm - ball_opp_net_vec_x * kick_dist;
+      double kick_point_y = ai->st.bpym - ball_opp_net_vec_y * kick_dist;
+      double (kick_point_y > 105) ? 105 : kick_point_y;
+      double (kick_point_y < 10) ? 10 : kick_point_y;
+      double (kick_point_x > 105) ? 170 : kick_point_y;
+      double (kick_point_x < 0) ? 10 : kick_point_y;
+      double kick_point_dist = norm(ai->st.spxm - kick_point_x, ai->st.spym - kick_point_y);
+      double ball_speed = norm(ai->st.bvxm, ai->st.bvym);
+      double da = angle_diff(ai->st.fa, atan2(ai->st.bpym - ai->st.spym, ai->st.bpxm - ai->st.spxm));
+
+      printf("Def_pos X: %f, Y: %f", defense_point_x, defense_point_y);
 
       switch(ai->st.state) {
-        case 1:
+        case 1: // Figure out forward direction
           if (ai->st.driving_dir == 1) ai->st.state = 11;
           break;
-        case 11:
-          if (distance < 5) ai->st.state = 21;
+        case 11: // Go to defensive position
+          if (distance < 8.0) ai->st.state = 21;
+          break;
+        case 21: // Go to kick point
+          if (fabs(ai->st.bpxm - our_net_x) < fabs(ai->st.spxm - our_net_x) + 5) ai->st.state = 11; // If the ball is closer to our net than we are then go defend
+          if (kick_point_dist < 8.0) ai->st.state = 22;
+          break;
+        case 22: // Align
+          if (fabs(ai->st.bpxm - our_net_x) < fabs(ai->st.spxm - our_net_x) + 5) ai->st.state = 11; // If the ball is closer to our net than we are then go defend
+          if (da < 0.05) ai->st.state = 23;
+        case 23: // Kick the ball
+          if (norm(ai->st.spxm - ai->st.bpxm, ai->st.spym - ai->st.bpym) > 30.0) ai->st.state = 11;
+          if (fabs(ai->st.bpxm - our_net_x) < fabs(ai->st.spxm - our_net_x) + 5) ai->st.state = 11; // If the ball is closer to our net than we are then go defend
+          if (ball_speed > 9.0) ai->st.state = 11;
           break;
       }
       printf("State: %d\n", ai->st.state);
@@ -244,28 +275,18 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
         case 1:
           move_forward(35, ai);
           break;
-        case 11:
-          go_to_point(ai, 50, 10, defense_target_x, defense_target_y);
+        case 11: // Go to defensive position
+          safe_go_to_point(ai, 50, 10, defense_point_x, defense_point_y);
           break;
-        
-        // This is the moving towards a point along the vector of point behind the bot to the ball
-        case 21:
-        {
-          printf("Move towards ball...\n");
-          stop_moving(ai);
-          // Similar implementation to penalty
-          // Keep calculating what a good vector to get the ball into the goal is and move towards
-          // Exit this state once we are along that vector
+        case 21: // Go to kick point
+          safe_go_to_point(ai, 50, 10, kick_point_x, kick_point_y);
           break;
-        }
-
-        // This is kicking the ball
-        case 23:
-        {
-          // Similar implementation to penalty where we move forward at full speed
+        case 22: // Align
+          safe_go_to_point(ai, 20, 0, ai->st.bpxm, ai->st.bpym);
           break;
-        }
-
+        case 23: // Kick the ball
+          safe_go_to_point(ai, 100, 20, ai->st.bpxm, ai->st.bpym);
+          break;
       }
     } else if (ai->st.state < 200) {
       double offense_target_x = (ai->st.side == 0) ? 170.0 : 0;
@@ -273,15 +294,7 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
 
       double targetPointVectorX = offense_target_x - ai->st.bpxm;
       double targetPointVectorY = offense_target_y - ai->st.bpym;
-
-      printf("offense_target_x: %f\n", offense_target_x);
-      printf("offense_target_y: %f\n", offense_target_y);
-      printf("Ball pos x: %f\n", ai->st.bpxm);
-      printf("Ball pos y: %f\n", ai->st.bpym);
-      printf("targetPointVectorX: %f\n", targetPointVectorX);
-      printf("targetPointVectorY: %f\n", targetPointVectorY);
       normalize_vector(&targetPointVectorX, &targetPointVectorY);
-
       double kick_dist = 25.0;
       double kick_point_x = ai->st.bpxm - targetPointVectorX * kick_dist;
       double kick_point_y = ai->st.bpym - targetPointVectorY * kick_dist;
