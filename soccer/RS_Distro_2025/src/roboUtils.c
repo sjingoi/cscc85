@@ -23,7 +23,7 @@ void convert_to_metric(struct RoboAI *ai) {
 
   if (ai->st.ball != NULL) {
     ai->st.bpxm = ai->st.ball->cx * CM_PER_PIXEL_X;
-    ai->st.bpym = ai->st.ball->cy * CM_PER_PIXEL_Y;
+    ai->st.bpym = ai->st.ball->cy * CM_PER_PIXEL_Y + 2.5; // Added slight downward offset due to camera projection
   }
   if (ai->st.self != NULL) {
     ai->st.spxm = ai->st.self->cx * CM_PER_PIXEL_X;
@@ -267,4 +267,16 @@ void updateTargetDefensivePosition(struct RoboAI *ai) {
 
 void updateEnemyDistance(struct RoboAI *ai) {
   ai->st.enemyDistance = point_distance(ai->st.opxm, ai->st.opym, ai->st.spxm,  ai->st.spym);
+}
+
+void bounded(double *x, double *y) {
+  *x = fmax(fmin(*x, 150), 20);
+  *y = fmax(fmin(*y, 95), 20);
+}
+
+bool ball_closer_to_net(const struct RoboAI *ai) {
+  double our_net_x = ((ai->st.side == 0) ? 0 : 170.0);
+  bool result = fabs(ai->st.bpxm - our_net_x) < fabs(ai->st.spxm - our_net_x);
+  if (result) printf("We are in front of the ball!\n");
+  return result;
 }

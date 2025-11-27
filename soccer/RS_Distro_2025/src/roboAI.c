@@ -223,71 +223,86 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
 
     // States on this range are for soccer against the opponent
     if (ai->st.state < 100) {
+      // Sorta constants
       double our_net_x = ((ai->st.side == 0) ? 0 : 170.0);
       double our_net_y = 115.0 / 2.0;
-      double defense_point_x = (ai->st.bpxm + our_net_x) / 2;
-      double defense_point_y = (ai->st.bpym + our_net_y) / 2;
-      double distance = norm(ai->st.spxm - defense_point_x, ai->st.spym - defense_point_y);
-
       double opp_net_x = (ai->st.side == 0) ? 170.0 : 0;
       double opp_net_y = 115.0 / 2.0;
+      double kick_dist = 18.0;
+
+      // Defense point (between ball and our net)
+      double defense_point_x = (ai->st.bpxm + our_net_x) / 2;
+      double defense_point_y = (ai->st.bpym + our_net_y) / 2;
+      bounded(&defense_point_x, &defense_point_y);
+      double defense_point_dist = norm(ai->st.spxm - defense_point_x, ai->st.spym - defense_point_y);
+
+      // Kick point
       double ball_opp_net_vec_x = opp_net_x - ai->st.bpxm;
       double ball_opp_net_vec_y = opp_net_y - ai->st.bpym;
       normalize_vector(&ball_opp_net_vec_x, &ball_opp_net_vec_y);
-      double kick_dist = 25.0;
       double kick_point_x = ai->st.bpxm - ball_opp_net_vec_x * kick_dist;
       double kick_point_y = ai->st.bpym - ball_opp_net_vec_y * kick_dist;
-      double (kick_point_y > 105) ? 105 : kick_point_y;
-      double (kick_point_y < 10) ? 10 : kick_point_y;
-      double (kick_point_x > 105) ? 170 : kick_point_y;
-      double (kick_point_x < 0) ? 10 : kick_point_y;
+      bounded(&kick_point_x, &kick_point_y);
       double kick_point_dist = norm(ai->st.spxm - kick_point_x, ai->st.spym - kick_point_y);
+
+      // Misc
       double ball_speed = norm(ai->st.bvxm, ai->st.bvym);
       double da = angle_diff(ai->st.fa, atan2(ai->st.bpym - ai->st.spym, ai->st.bpxm - ai->st.spxm));
 
-      printf("Def_pos X: %f, Y: %f", defense_point_x, defense_point_y);
-
       switch(ai->st.state) {
         case 1: // Figure out forward direction
-          if (ai->st.driving_dir == 1) ai->st.state = 11;
+          if (ai->st.driving_dir == 1) ai->st.state = 24;
           break;
         case 11: // Go to defensive position
-          if (distance < 8.0) ai->st.state = 21;
+          if (defense_point_dist < 8.0) ai->st.state = 21;
           break;
         case 21: // Go to kick point
-          if (fabs(ai->st.bpxm - our_net_x) < fabs(ai->st.spxm - our_net_x) + 5) ai->st.state = 11; // If the ball is closer to our net than we are then go defend
-          if (kick_point_dist < 8.0) ai->st.state = 22;
+          if (ball_closer_to_net(ai)) ai->st.state = 11; // If the ball is closer to our net than we are then go defend
+          if (kick_point_dist < 10.0) ai->st.state = 22;
           break;
         case 22: // Align
-          if (fabs(ai->st.bpxm - our_net_x) < fabs(ai->st.spxm - our_net_x) + 5) ai->st.state = 11; // If the ball is closer to our net than we are then go defend
-          if (da < 0.05) ai->st.state = 23;
+          if (ball_closer_to_net(ai)) ai->st.state = 11; // If the ball is closer to our net than we are then go defend
+          if (da < 0.001) ai->st.state = 23;
         case 23: // Kick the ball
           if (norm(ai->st.spxm - ai->st.bpxm, ai->st.spym - ai->st.bpym) > 30.0) ai->st.state = 11;
-          if (fabs(ai->st.bpxm - our_net_x) < fabs(ai->st.spxm - our_net_x) + 5) ai->st.state = 11; // If the ball is closer to our net than we are then go defend
+          if (ball_closer_to_net(ai)) ai->st.state = 11; // If the ball is closer to our net than we are then go defend
           if (ball_speed > 9.0) ai->st.state = 11;
           break;
+        case 24: // KICKOFF
+          if (ball_closer_to_net(ai)) ai->st.state = 11; // If the ball is closer to our net than we are then go defend
+          if (kick_point_dist < 40.0) ai->st.state = 21;
+          break;
       }
+
+      // printf("Def_pos X: %f, Y: %f", defense_point_x, defense_point_y);
+      // printf("Angle Diff: %f\n", da);
+      printf("Distance to kick point: %f\n", kick_point_dist);
       printf("State: %d\n", ai->st.state);
+
       // 0 - 20 are for defence
       // 21 - 99 are for offence
       switch(ai->st.state) {
         // Go to defence kick position
         case 1:
-          move_forward(35, ai);
+          move_forward(100, ai);
           break;
         case 11: // Go to defensive position
-          safe_go_to_point(ai, 50, 10, defense_point_x, defense_point_y);
+          safe_go_to_point(ai, 75, 10, defense_point_x, defense_point_y);
           break;
         case 21: // Go to kick point
-          safe_go_to_point(ai, 50, 10, kick_point_x, kick_point_y);
+          safe_go_to_point(ai, 75, 10, kick_point_x, kick_point_y);
           break;
         case 22: // Align
           safe_go_to_point(ai, 20, 0, ai->st.bpxm, ai->st.bpym);
           break;
         case 23: // Kick the ball
-          safe_go_to_point(ai, 100, 20, ai->st.bpxm, ai->st.bpym);
+          safe_go_to_point(ai, 100, 20, opp_net_x, opp_net_y);
           break;
+        case 24: // KICKOFF
+          safe_go_to_point(ai, 100, 8, kick_point_x, kick_point_y);
       }
+
+
     } else if (ai->st.state < 200) {
       double offense_target_x = (ai->st.side == 0) ? 170.0 : 0;
       double offense_target_y = 115.0 / 2.0;
@@ -411,8 +426,6 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
       }
 
     }
-
-  printf("CURRENT STATE: %d\n", ai->st.state);
 
  }
 }
