@@ -160,7 +160,7 @@ int turn_towards_dir(struct RoboAI *ai, double t_dir_x, double t_dir_y) {
     return 1; // Aligned
 }
 
-int detect_ball(struct RoboAI *ai, double forward_dist, double lateral_dist) {
+int detect_ball(struct RoboAI *ai, double forward_dist, double lateral_dist, int team) {
 
   // check if all are fixed
   if (!ai || !ai->st.ballID || ai->st.ball == NULL) return 0;
@@ -168,11 +168,20 @@ int detect_ball(struct RoboAI *ai, double forward_dist, double lateral_dist) {
   // positions and forward vector
   double bx = ai->st.bpxm;
   double by = ai->st.bpym;
-  double sx = ai->st.spxm;
-  double sy = ai->st.spym;
+  
+  double sx, sy, fx, fy;
 
-  double fx = ai->st.fxm;
-  double fy = ai->st.fym;
+  if (team == 0) {
+    sx = ai->st.spxm;
+    sy = ai->st.spym;
+    fx = ai->st.fxm;
+    fy = ai->st.fym;
+  } else {
+    sx = ai->st.opxm;
+    sy = ai->st.opym;
+    fx = ai->st.odxm;
+    fy = ai->st.odym;
+  }
 
   // bot to ball vector
   double vx = bx - sx;
@@ -182,25 +191,18 @@ int detect_ball(struct RoboAI *ai, double forward_dist, double lateral_dist) {
   double nx = -fy;
   double ny = fx;
 
+  double f2 = fx*fx + fy*fy;
+  if (f2 <= 0) return 0;
+
   // project onto robot basis
-  double forward = vx*fx + vy*fy;
-  double lateral = vx*nx + vy*ny;
+  double forward = (vx*fx + vy*fy) / f2;
+  double lateral = (vx*nx + vy*ny) / f2;
 
   // ball behind check
   if (forward <= 0) return 0;
 
-  // compute magnitudes of basis vectors
-  double f2 = fx*fx + fy*fy;
-
-  // compare sq values
-  double fwd2 = forward*forward;
-  double lat2 = lateral*lateral;
-  
-  double maxF2 = forward_dist * forward_dist * f2;
-  double maxL2 = lateral_dist * lateral_dist * f2; // perp basis has same length as f2
-
-  if (fwd2 > maxF2) return 0; // too far ahead
-  if (lat2 > maxL2) return 0; // too far laterally
+  if (forward > forward_dist) return 0; // too far ahead
+  if (lateral > lateral_dist || lateral < -lateral_dist) return 0; // too far laterally
 
   return 1; // all requirements fulfilled
 }

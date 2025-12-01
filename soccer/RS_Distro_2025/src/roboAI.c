@@ -247,8 +247,8 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
 
       // printf("Def_pos X: %f, Y: %f", defense_point_x, defense_point_y);
 
-      printf("Ball coords: %f %f\n", ai->st.bpxm, ai->st.bpym);
-      if(detect_ball(ai, 15, 10)) printf("Goal in thresh\n");
+      // printf("Ball coords: %f %f\n", ai->st.bpxm, ai->st.bpym);
+      if(detect_ball(ai, 30, 14, 0)) printf("Goal in thresh\n");
 
       // switch(ai->st.state) {
       //   case 1: // Figure out forward direction
