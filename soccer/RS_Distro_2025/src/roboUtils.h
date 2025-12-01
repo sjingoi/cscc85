@@ -20,5 +20,5 @@ void update_vars(struct RoboAI *ai);
 double point_distance(double x1, double y1, double x2, double y2);
 void updateTargetDefensivePosition(struct RoboAI *ai);
 void updateEnemyDistance(struct RoboAI *ai);
-void bounded(double *x, double *y);
+void bounded(double *x, double *y, double padding);
 bool ball_closer_to_net(const struct RoboAI *ai);

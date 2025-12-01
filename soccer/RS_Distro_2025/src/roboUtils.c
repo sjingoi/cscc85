@@ -23,7 +23,8 @@ void convert_to_metric(struct RoboAI *ai) {
 
   if (ai->st.ball != NULL) {
     ai->st.bpxm = ai->st.ball->cx * CM_PER_PIXEL_X;
-    ai->st.bpym = ai->st.ball->cy * CM_PER_PIXEL_Y + 2.5; // Added slight downward offset due to camera projection
+    ai->st.bpym = ai->st.ball->cy * CM_PER_PIXEL_Y; // Added slight downward offset due to camera projection
+    bounded(&ai->st.bpxm, &ai->st.bpym, 10);
   }
   if (ai->st.self != NULL) {
     ai->st.spxm = ai->st.self->cx * CM_PER_PIXEL_X;
@@ -269,9 +270,9 @@ void updateEnemyDistance(struct RoboAI *ai) {
   ai->st.enemyDistance = point_distance(ai->st.opxm, ai->st.opym, ai->st.spxm,  ai->st.spym);
 }
 
-void bounded(double *x, double *y) {
-  *x = fmax(fmin(*x, 150), 20);
-  *y = fmax(fmin(*y, 95), 20);
+void bounded(double *x, double *y, double padding) {
+  *x = fmax(fmin(*x, 170 - padding), padding);
+  *y = fmax(fmin(*y, 115 - padding), padding);
 }
 
 bool ball_closer_to_net(const struct RoboAI *ai) {
