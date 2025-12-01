@@ -246,6 +246,7 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
       double da = angle_diff(ai->st.fa, atan2(ai->st.bpym - ai->st.spym, ai->st.bpxm - ai->st.spxm));
 
       printf("Def_pos X: %f, Y: %f", defense_point_x, defense_point_y);
+      if(detect_ball(ai, 20, 20)) printf("Goal in threshhold");
 
       switch(ai->st.state) {
         case 1: // Figure out forward direction
