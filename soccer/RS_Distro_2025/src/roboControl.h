@@ -25,3 +25,5 @@ void safe_go_to_point(struct RoboAI *ai, int power, double turn_smoothness, doub
 int holding_ball(struct RoboAI *ai, double forward_dist, double lateral_dist);
 
 void recover_blocking(struct RoboAI *ai);
+
+void stuck_detect(struct RoboAI *ai, double our_net_x, double our_net_y);
