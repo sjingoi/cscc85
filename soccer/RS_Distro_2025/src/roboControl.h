@@ -22,4 +22,4 @@ int turn_towards_dir(struct RoboAI *ai, double t_dir_x, double t_dir_y);
 
 void safe_go_to_point(struct RoboAI *ai, int power, double turn_smoothness, double target_x, double target_y);
 
-int detect_ball(struct RoboAI *ai, double forward_dist, double lateral_dist, int team);
+int holding_ball(struct RoboAI *ai, double forward_dist, double lateral_dist);

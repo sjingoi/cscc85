@@ -160,8 +160,8 @@ int turn_towards_dir(struct RoboAI *ai, double t_dir_x, double t_dir_y) {
     return 1; // Aligned
 }
 
-int detect_ball(struct RoboAI *ai, double forward_dist, double lateral_dist, int team) {
-
+int holding_ball(struct RoboAI *ai, double forward_dist, double lateral_dist) {
+  
   // check if all are fixed
   if (!ai || !ai->st.ballID || ai->st.ball == NULL) return 0;
 
@@ -171,17 +171,10 @@ int detect_ball(struct RoboAI *ai, double forward_dist, double lateral_dist, int
   
   double sx, sy, fx, fy;
 
-  if (team == 0) {
-    sx = ai->st.spxm;
-    sy = ai->st.spym;
-    fx = ai->st.fxm;
-    fy = ai->st.fym;
-  } else {
-    sx = ai->st.opxm;
-    sy = ai->st.opym;
-    fx = ai->st.odxm;
-    fy = ai->st.odym;
-  }
+  sx = ai->st.spxm;
+  sy = ai->st.spym;
+  fx = ai->st.fxm;
+  fy = ai->st.fym;
 
   // bot to ball vector
   double vx = bx - sx;

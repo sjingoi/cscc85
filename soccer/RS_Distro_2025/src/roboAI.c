@@ -186,9 +186,6 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
  }
  else
  {
-  
-
-
 
   /****************************************************************************
    TO DO:
@@ -208,211 +205,199 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
    state transitions and with calling the appropriate function based on what
    the bot is supposed to be doing.
   *****************************************************************************/
-//  fprintf(stderr,"Just trackin'!\n");	// bot, opponent, and ball.
-//  track_agents(ai,blobs);		// Currently, does nothing but endlessly track
-// Update blob tracking for this frame
-    track_agents(ai, blobs);
-    convert_to_metric(ai);
-    // clean_heading(ai, &old_dx, &old_dy);
-    determine_facing(ai);
-    update_vars(ai);
-    
-    // printf("Driving dir: %d\n", ai->st.driving_dir);
-    // printf("Facing direction: %f %f\n", ai->st.fxm, ai->st.fym);
-    // printf("Angle: %f\n", ai->st.fa);
+  track_agents(ai, blobs);
+  convert_to_metric(ai);
+  // clean_heading(ai, &old_dx, &old_dy);
+  determine_facing(ai);
+  update_vars(ai);
+  
+  // Sorta constants
+  double our_net_x = ((ai->st.side == 0) ? 0 : 170.0);
+  double our_net_y = 115.0 / 2.0;
+  double opp_net_x = (ai->st.side == 0) ? 170.0 : 0;
+  double opp_net_y = 115.0 / 2.0;
+  double kick_dist = 18.0;
 
-    // States on this range are for soccer against the opponent
-    if (ai->st.state < 100) {
-      double our_net_x = ((ai->st.side == 0) ? 0 : 170.0);
-      double our_net_y = 115.0 / 2.0;
-      double defense_point_x = (ai->st.bpxm + our_net_x) / 2;
-      double defense_point_y = (ai->st.bpym + our_net_y) / 2;
-      double distance = norm(ai->st.spxm - defense_point_x, ai->st.spym - defense_point_y);
+  // Defense point (between ball and our net)
+  double defense_point_x = (ai->st.bpxm + our_net_x) / 2;
+  double defense_point_y = (ai->st.bpym + our_net_y) / 2;
+  bounded(&defense_point_x, &defense_point_y, 20);
+  double defense_point_dist = norm(ai->st.spxm - defense_point_x, ai->st.spym - defense_point_y);
 
-      double opp_net_x = (ai->st.side == 0) ? 170.0 : 0;
-      double opp_net_y = 115.0 / 2.0;
-      double ball_opp_net_vec_x = opp_net_x - ai->st.bpxm;
-      double ball_opp_net_vec_y = opp_net_y - ai->st.bpym;
-      normalize_vector(&ball_opp_net_vec_x, &ball_opp_net_vec_y);
-      double kick_dist = 25.0;
-      double kick_point_x = ai->st.bpxm - ball_opp_net_vec_x * kick_dist;
-      double kick_point_y = ai->st.bpym - ball_opp_net_vec_y * kick_dist;
-      double (kick_point_y > 105) ? 105 : kick_point_y;
-      double (kick_point_y < 10) ? 10 : kick_point_y;
-      double (kick_point_x > 105) ? 170 : kick_point_y;
-      double (kick_point_x < 0) ? 10 : kick_point_y;
-      double kick_point_dist = norm(ai->st.spxm - kick_point_x, ai->st.spym - kick_point_y);
-      double ball_speed = norm(ai->st.bvxm, ai->st.bvym);
-      double da = angle_diff(ai->st.fa, atan2(ai->st.bpym - ai->st.spym, ai->st.bpxm - ai->st.spxm));
+  // Kick point
+  double ball_opp_net_vec_x = opp_net_x - ai->st.bpxm;
+  double ball_opp_net_vec_y = opp_net_y - ai->st.bpym;
+  normalize_vector(&ball_opp_net_vec_x, &ball_opp_net_vec_y);
+  double kick_point_x = ai->st.bpxm - ball_opp_net_vec_x * kick_dist;
+  double kick_point_y = ai->st.bpym - ball_opp_net_vec_y * kick_dist;
+  bounded(&kick_point_x, &kick_point_y, 20);
+  double kick_point_dist = norm(ai->st.spxm - kick_point_x, ai->st.spym - kick_point_y);
 
-      printf("Def_pos X: %f, Y: %f", defense_point_x, defense_point_y);
+  // Misc
+  double ball_speed = norm(ai->st.bvxm, ai->st.bvym);
+  double distance_to_ball = norm(ai->st.spxm - ai->st.bpxm, ai->st.spym - ai->st.bpym);
+  double opp_distance_to_ball = norm(ai->st.opxm - ai->st.bpxm, ai->st.opym - ai->st.bpym);
+  double da = angle_diff(ai->st.fa, atan2(ai->st.bpym - ai->st.spym, ai->st.bpxm - ai->st.spxm));
+  double ball_aligned = fabs(da) < 0.03;
+  int opponent_on_attack = 1.5 * opp_distance_to_ball < distance_to_ball;
 
-      switch(ai->st.state) {
-        case 1: // Figure out forward direction
-          if (ai->st.driving_dir == 1) ai->st.state = 11;
-          break;
-        case 11: // Go to defensive position
-          if (distance < 8.0) ai->st.state = 21;
-          break;
-        case 21: // Go to kick point
-          if (fabs(ai->st.bpxm - our_net_x) < fabs(ai->st.spxm - our_net_x) + 5) ai->st.state = 11; // If the ball is closer to our net than we are then go defend
-          if (kick_point_dist < 8.0) ai->st.state = 22;
-          break;
-        case 22: // Align
-          if (fabs(ai->st.bpxm - our_net_x) < fabs(ai->st.spxm - our_net_x) + 5) ai->st.state = 11; // If the ball is closer to our net than we are then go defend
-          if (da < 0.05) ai->st.state = 23;
-        case 23: // Kick the ball
-          if (norm(ai->st.spxm - ai->st.bpxm, ai->st.spym - ai->st.bpym) > 30.0) ai->st.state = 11;
-          if (fabs(ai->st.bpxm - our_net_x) < fabs(ai->st.spxm - our_net_x) + 5) ai->st.state = 11; // If the ball is closer to our net than we are then go defend
-          if (ball_speed > 9.0) ai->st.state = 11;
-          break;
+  // States on this range are for soccer against the opponent
+  if (ai->st.state < 100) {
+    // State transitions
+    switch(ai->st.state) {
+      case 1: // Figure out forward direction
+        if (ai->st.driving_dir == 1) ai->st.state = 24;
+        break;
+      case 11: // Go to defensive position
+        if (defense_point_dist < 8.0 && !opponent_on_attack) ai->st.state = 21;
+        if (holding_ball(ai, 15.0, 10.0)) ai->st.state = 23;
+        break;
+      case 21: // Go to kick point
+        if (ball_closer_to_net(ai)) ai->st.state = 11; // If the ball is closer to our net than we are then go defend
+        if (opponent_on_attack) ai->st.state = 11;
+        if (kick_point_dist < 10.0) ai->st.state = 22;
+        break;
+      case 22: // Align
+        if (ball_closer_to_net(ai)) ai->st.state = 11; // If the ball is closer to our net than we are then go defend
+        if (holding_ball(ai, 10.0, 7.0)) ai->st.state = 23;
+        if (ball_aligned) ai->st.state = 23;
+      case 23: // Kick the ball
+        if (distance_to_ball > 30.0) ai->st.state = 25;
+        if (ball_closer_to_net(ai)) ai->st.state = 25; // If the ball is closer to our net than we are then go defend
+        if (ball_speed > 5.2) ai->st.state = 25;
+        break;
+      case 25: // Wait for ball to leave claws
+        if (ball_speed < 2.0 || distance_to_ball > 15) ai->st.state = 11;
+        break;
+      case 24: // KICKOFF
+        if (ball_closer_to_net(ai)) ai->st.state = 11; // If the ball is closer to our net than we are then go defend
+        if (kick_point_dist < 40.0) ai->st.state = 21;
+        break;
+    }
+    printf("Opponent on attack: %d\n", opponent_on_attack);
+    printf("State: %d\n", ai->st.state);
+    // State behaviour
+    switch(ai->st.state) {
+      case 1:
+        move_forward(100, ai);
+        break;
+      case 11: // Go to defensive position
+        safe_go_to_point(ai, 75, 10, defense_point_x, defense_point_y);
+        break;
+      case 21: // Go to kick point
+        safe_go_to_point(ai, 75, 10, kick_point_x, kick_point_y);
+        break;
+      case 22: // Align
+        safe_go_to_point(ai, 20, 0, ai->st.bpxm, ai->st.bpym);
+        break;
+      case 23: // Kick the ball
+        safe_go_to_point(ai, 100, 20, opp_net_x, opp_net_y);
+        break;
+      case 25: // Wait for ball to leave claws
+        stop_moving(ai);
+        break;
+      case 24: // KICKOFF
+        safe_go_to_point(ai, 100, 8, kick_point_x, kick_point_y);
+        break;
+    }
+  } else if (ai->st.state < 200) {
+    // State transitions
+    switch(ai->st.state) {
+      case 101: // Figure out forward direction
+        if (ai->st.driving_dir == 1) ai->st.state = 121;
+        break;
+      case 121: // Go to kick point
+        if (kick_point_dist < 10.0) ai->st.state = 122;
+        break;
+      case 122: // Align
+        if (ball_aligned) ai->st.state = 123;
+      case 123: // Kick the ball
+        if (distance_to_ball > 30.0) ai->st.state = 121;
+        if (ball_speed > 4.5) ai->st.state = 125; // Ball has been kicked
+        break;
+      case 125: // Wait for ball to leave claws
+        // Dont leave this state
+        break;
+    }
+    // State behaviour
+    switch(ai->st.state) {
+      case 101:
+        move_forward(35, ai);
+        break;
+      case 121: // Go to kick point
+        safe_go_to_point(ai, 25, 10, kick_point_x, kick_point_y);
+        break;
+      case 122: // Align
+        safe_go_to_point(ai, 20, 0, ai->st.bpxm, ai->st.bpym);
+        break;
+      case 123: // Kick the ball
+        safe_go_to_point(ai, 100, 20, opp_net_x, opp_net_y);
+        break;
+      case 125: // Wait for ball to leave claws
+        stop_moving(ai);
+        break;
+    }
+  } else if (ai->st.state < 300) {
+    printf("Chase ball\n");
+
+    struct blob *my_bot = ai->st.self;
+    struct blob *ball = ai->st.ball;
+
+    if (!my_bot || !ball) {
+      printf("All stop.\n");
+      if (!my_bot) {
+        printf("No bot.\n");
       }
-      printf("State: %d\n", ai->st.state);
-      // 0 - 20 are for defence
-      // 21 - 99 are for offence
-      switch(ai->st.state) {
-        // Go to defence kick position
-        case 1:
-          move_forward(35, ai);
-          break;
-        case 11: // Go to defensive position
-          safe_go_to_point(ai, 50, 10, defense_point_x, defense_point_y);
-          break;
-        case 21: // Go to kick point
-          safe_go_to_point(ai, 50, 10, kick_point_x, kick_point_y);
-          break;
-        case 22: // Align
-          safe_go_to_point(ai, 20, 0, ai->st.bpxm, ai->st.bpym);
-          break;
-        case 23: // Kick the ball
-          safe_go_to_point(ai, 100, 20, ai->st.bpxm, ai->st.bpym);
-          break;
+      else {
+        printf("No ball.\n");
+
       }
-    } else if (ai->st.state < 200) {
-      double offense_target_x = (ai->st.side == 0) ? 170.0 : 0;
-      double offense_target_y = 115.0 / 2.0;
-
-      double targetPointVectorX = offense_target_x - ai->st.bpxm;
-      double targetPointVectorY = offense_target_y - ai->st.bpym;
-      normalize_vector(&targetPointVectorX, &targetPointVectorY);
-      double kick_dist = 25.0;
-      double kick_point_x = ai->st.bpxm - targetPointVectorX * kick_dist;
-      double kick_point_y = ai->st.bpym - targetPointVectorY * kick_dist;
-      double kick_point_dist = norm(ai->st.spxm - kick_point_x, ai->st.spym - kick_point_y);
-      double ball_speed = norm(ai->st.bvxm, ai->st.bvym);
-
-      double da = angle_diff(ai->st.fa, atan2(offense_target_y - ai->st.spym, offense_target_x - ai->st.spxm));
-      printf("Ball sped: %f\n", ball_speed);
-      
-
-      printf("Ball point %f %f\n", offense_target_y, ai->st.bpym);
-      printf("Dist %f\n", kick_point_dist);
-      printf("DA: %f\n", da);
-
-
-      switch(ai->st.state) {
-        case 101:
-          // Go to shooting position coarse
-          if (kick_point_dist < 16.0) ai->st.state = 102;
-          break;
-        case 102:
-          // Go to shooting position fine tune
-          if (kick_point_dist < 5.0) ai->st.state = 103;
-          break;
-        case 103:
-          // Go to shooting position fine tune
-          if (da < 0.02) ai->st.state = 104;
-          break;
-        case 104:
-          if (ball_speed > 7) ai->st.state = 105;
-          break;
-      }
-
-      printf("Current state: %d\n", ai->st.state);
-
-      switch(ai->st.state) {
-        case 101:
-          go_to_point(ai, 65, 10, kick_point_x, kick_point_y);
-          break;
-        case 102:
-          go_to_point(ai, 30, 3, kick_point_x, kick_point_y);
-          break;
-        case 103:
-          go_to_point(ai, 10, 0, offense_target_x, offense_target_y);
-          break;
-        case 104:
-          go_to_point(ai, 100, 10, offense_target_x, offense_target_y);
-          break;
-        case 105: 
-          stop_moving(ai);
-          break;
-        default:
-          stop_moving(ai);
-          break;
-      }
-    } else if (ai->st.state < 300) {
-      printf("Chase ball\n");
-
-      struct blob *my_bot = ai->st.self;
-      struct blob *ball = ai->st.ball;
-
-      if (!my_bot || !ball) {
-        printf("All stop.\n");
-        if (!my_bot) {
-          printf("No bot.\n");
-        }
-        else {
-          printf("No ball.\n");
-
-        }
-          stop_moving(ai);
-          return;
-      }
-
-      // --- Ball/self vectors
-      double ballx = ai->st.bpxm;   // ball position in meters
-      double bally = ai->st.bpym;
-      double myx   = ai->st.spxm;   // robot position in meters
-      double myy   = ai->st.spym;
-
-      double dist_to_ball = point_distance(myx, myy, ballx, bally);
-
-      double fast_speed = 50;
-      double slow_speed = 35;
-      double slow_dist  = 20;   // meters (20 cm)
-
-      switch(ai->st.state) {
-        case 201:
-            printf("Distance: %f \n", dist_to_ball);
-
-            // Slow down when close
-            int power, turn_smooth;
-
-            if (dist_to_ball < slow_dist) {
-                power = slow_speed;
-                turn_smooth = 10;
-            }
-            else {
-                power = fast_speed;
-                turn_smooth = 10;
-            }
-
-            go_to_point(ai, power, 10, ballx, bally);
-
-            printf("ball x %f ball y %f  dist: %f  power: %d\n",
-                  ballx, bally, dist_to_ball, power);
-
-            break;
-
-        default:
-            fprintf(stderr, "[CHASE] Unknown state %d, default to 201.\n", ai->st.state);
-            ai->st.state = 201;
-            break;
-      }
-
+        stop_moving(ai);
+        return;
     }
 
-  printf("CURRENT STATE: %d\n", ai->st.state);
+    // --- Ball/self vectors
+    double ballx = ai->st.bpxm;   // ball position in meters
+    double bally = ai->st.bpym;
+    double myx   = ai->st.spxm;   // robot position in meters
+    double myy   = ai->st.spym;
+
+    double dist_to_ball = point_distance(myx, myy, ballx, bally);
+
+    double fast_speed = 50;
+    double slow_speed = 35;
+    double slow_dist  = 20;   // meters (20 cm)
+
+    switch(ai->st.state) {
+      case 201:
+          printf("Distance: %f \n", dist_to_ball);
+
+          // Slow down when close
+          int power, turn_smooth;
+
+          if (dist_to_ball < slow_dist) {
+              power = slow_speed;
+              turn_smooth = 10;
+          }
+          else {
+              power = fast_speed;
+              turn_smooth = 10;
+          }
+
+          go_to_point(ai, power, 10, ballx, bally);
+
+          printf("ball x %f ball y %f  dist: %f  power: %d\n",
+                ballx, bally, dist_to_ball, power);
+
+          break;
+
+      default:
+          fprintf(stderr, "[CHASE] Unknown state %d, default to 201.\n", ai->st.state);
+          ai->st.state = 201;
+          break;
+    }
+
+  }
 
  }
 }
