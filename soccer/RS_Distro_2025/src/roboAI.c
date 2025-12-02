@@ -236,8 +236,10 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
   // Misc
   double ball_speed = norm(ai->st.bvxm, ai->st.bvym);
   double distance_to_ball = norm(ai->st.spxm - ai->st.bpxm, ai->st.spym - ai->st.bpym);
+  double opp_distance_to_ball = norm(ai->st.opxm - ai->st.bpxm, ai->st.opym - ai->st.bpym);
   double da = angle_diff(ai->st.fa, atan2(ai->st.bpym - ai->st.spym, ai->st.bpxm - ai->st.spxm));
   double ball_aligned = fabs(da) < 0.03;
+  int opponent_on_attack = 1.5 * opp_distance_to_ball < distance_to_ball;
 
   // States on this range are for soccer against the opponent
   if (ai->st.state < 100) {
@@ -247,15 +249,17 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
         if (ai->st.driving_dir == 1) ai->st.state = 24;
         break;
       case 11: // Go to defensive position
-        if (defense_point_dist < 8.0) ai->st.state = 21;
+        if (defense_point_dist < 8.0 && !opponent_on_attack) ai->st.state = 21;
         if (holding_ball(ai, 15.0, 10.0)) ai->st.state = 23;
         break;
       case 21: // Go to kick point
         if (ball_closer_to_net(ai)) ai->st.state = 11; // If the ball is closer to our net than we are then go defend
+        if (opponent_on_attack) ai->st.state = 11;
         if (kick_point_dist < 10.0) ai->st.state = 22;
         break;
       case 22: // Align
         if (ball_closer_to_net(ai)) ai->st.state = 11; // If the ball is closer to our net than we are then go defend
+        if (holding_ball(ai, 10.0, 7.0)) ai->st.state = 23;
         if (ball_aligned) ai->st.state = 23;
       case 23: // Kick the ball
         if (distance_to_ball > 30.0) ai->st.state = 25;
@@ -270,6 +274,7 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
         if (kick_point_dist < 40.0) ai->st.state = 21;
         break;
     }
+    printf("Opponent on attack: %d\n", opponent_on_attack);
     printf("State: %d\n", ai->st.state);
     // State behaviour
     switch(ai->st.state) {
