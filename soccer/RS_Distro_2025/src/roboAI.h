@@ -126,6 +126,13 @@ struct AI_data{
 	double gyroAngles[8];
 
 	double enemyDistance; // Distance to the opponent robot
+
+	// Stuck check
+	int prev_state;        // previous state id
+	int state_timer;       // ticks since last state change
+	double last_x, last_y; // last known position (meters)
+	int stuck_counter;     // optional: count consecutive stuck checks
+	int recently_recovered; // optional: timestamp or tick count when last recovery happened
 };
 
 struct RoboAI {

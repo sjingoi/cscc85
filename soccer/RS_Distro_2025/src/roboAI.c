@@ -40,6 +40,8 @@ double theta_th = 0.3;      // cos(angle threshold)
 double dis_th   = 50;       // distance threshold
 int drive_pw    = 30;
 int turn_pw     = 30;
+const double move_thresh = 2.0;
+const int consider_stuck = 50;
 
 // Distance from ball to position bot for kick (in pixels) we can update this later
 #define KICK_POSITION_DISTANCE 200.0
@@ -178,6 +180,12 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
        }       
    }
 
+   ai->st.prev_state = ai->st.state;
+   ai->st.state_timer = 0;
+   ai->st.last_x = ai->st.self->cx;   // or self->cx if spxm not ready
+   ai->st.last_y = ai->st.self->cy;
+   ai->st.stuck_counter = 0;
+   ai->st.recently_recovered = 0;
          
   }
   
@@ -245,6 +253,32 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
   bool ball_on_course = ball_net_lambda > 0 && fabs(ball_impact - (115.0 / 2)) <= 4.0; // Ball within 5.0 cm of net center
   double kick_target_x = (ai->st.bpxm + 2 * opp_net_x) / 3;
   double kick_target_y = (ai->st.bpym + 2 * opp_net_y) / 3;
+
+   // state change detection
+  if (ai->st.state != ai->st.prev_state) {
+      ai->st.prev_state = ai->st.state;
+      ai->st.state_timer = 0;
+      ai->st.stuck_counter = 0;     // reset stuck counter on state change
+  } else {
+      ai->st.state_timer++;
+  }
+
+  double diffx = ai->st.spxm - ai->st.last_x;
+  double diffy = ai->st.spym - ai->st.last_y;
+  double dist_sq = diffx*diffx + diffy*diffy;
+
+  if (dist_sq < (move_thresh*move_thresh)) {
+      ai->st.stuck_counter++;
+  } else {
+      ai->st.stuck_counter = 0;
+      ai->st.last_x = ai->st.spxm;
+      ai->st.last_y = ai->st.spym;
+  }
+
+  if (ai->st.stuck_counter >= consider_stuck) {
+    recover_blocking(ai);
+    return;
+  }
 
   // States on this range are for soccer against the opponent
   if (ai->st.state < 100) {
