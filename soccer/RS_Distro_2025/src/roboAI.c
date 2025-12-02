@@ -248,6 +248,7 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
         break;
       case 11: // Go to defensive position
         if (defense_point_dist < 8.0) ai->st.state = 21;
+        if (holding_ball(ai, 15.0, 10.0)) ai->st.state = 23;
         break;
       case 21: // Go to kick point
         if (ball_closer_to_net(ai)) ai->st.state = 11; // If the ball is closer to our net than we are then go defend
@@ -269,6 +270,7 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
         if (kick_point_dist < 40.0) ai->st.state = 21;
         break;
     }
+    printf("State: %d\n", ai->st.state);
     // State behaviour
     switch(ai->st.state) {
       case 1:
@@ -306,7 +308,7 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
         if (ball_aligned) ai->st.state = 123;
       case 123: // Kick the ball
         if (distance_to_ball > 30.0) ai->st.state = 121;
-        if (ball_speed > 4.75) ai->st.state = 125; // Ball has been kicked
+        if (ball_speed > 4.5) ai->st.state = 125; // Ball has been kicked
         break;
       case 125: // Wait for ball to leave claws
         // Dont leave this state
