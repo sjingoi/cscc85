@@ -97,7 +97,7 @@ int main(int argc, char **argv)
   glutInit(&argc, argv);
 
   // Launch imageCapture
-  if (imageCaptureStartup(argv[1], 1280, 720, atoi(argv[2]), atoi(argv[3]))) {
+  if (imageCaptureStartup(argv[1], 640, 360, atoi(argv[2]), atoi(argv[3]))) {
     fprintf(stderr, "Couldn't start image capture, terminating...\n");
     exit(0);
   }
