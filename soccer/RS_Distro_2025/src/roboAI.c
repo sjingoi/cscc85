@@ -40,8 +40,11 @@ double theta_th = 0.3;      // cos(angle threshold)
 double dis_th   = 50;       // distance threshold
 int drive_pw    = 30;
 int turn_pw     = 30;
-const double move_thresh = 2.0;
+const double move_thresh = 4.0;
 const int consider_stuck = 50;
+const double net_thresh = 57;
+const double opp_thresh = 25;
+const double ball_thresh = 25;
 
 // Distance from ball to position bot for kick (in pixels) we can update this later
 #define KICK_POSITION_DISTANCE 200.0
@@ -276,8 +279,65 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
   }
 
   if (ai->st.stuck_counter >= consider_stuck) {
-    recover_blocking(ai);
-    return;
+    double net_thresh2 = net_thresh * net_thresh;
+    double opp_thresh2 = opp_thresh * opp_thresh;
+    double ball_thresh2 = ball_thresh * ball_thresh;
+    /* distance^2 from our net */
+    double dxn = ai->st.spxm - our_net_x;
+    double dyn = ai->st.spym - our_net_y;
+    double dist2_to_our_net = dxn*dxn + dyn*dyn;
+
+     // opponent check
+    int opponent_available = (ai->st.opp != NULL);
+    double dist2_opp_to_us = 1e12;
+    if (opponent_available) {
+        double dxo = ai->st.opxm - ai->st.spxm;
+        double dyo = ai->st.opym - ai->st.spym;
+        dist2_opp_to_us = dxo*dxo + dyo*dyo;
+    }
+
+    // ball distance^2 to us
+    int ball_vis = (ai->st.ball != NULL);
+    double dist2_ball_to_us = 1e12;
+    if (ball_vis) {
+        double dxb = ai->st.bpxm - ai->st.spxm;
+        double dyb = ai->st.bpym - ai->st.spym;
+        dist2_ball_to_us = dxb*dxb + dyb*dyb;
+    }
+
+    // Decide whether we are 'near our net' AND 'opponent is close'
+    int near_our_net = (dist2_to_our_net <= net_thresh2) ? 1 : 0;
+    int opp_is_close = (opponent_available && dist2_opp_to_us <= opp_thresh2) ? 1 : 0;
+    int ball_is_close = (ball_vis && dist2_ball_to_us <= ball_thresh2);
+    
+    printf("%f\n",dist2_to_our_net);
+    if (near_our_net) printf("Near our net\n");
+    if (opp_is_close) printf("Opponent near\n");
+    if (ball_is_close) printf("Ball close\n");
+
+    if (near_our_net && opp_is_close && ball_is_close) {
+        // SKIP backing up because we are defending and opponent is close
+
+        // reset stuck counter so we dont immediately re-trigger
+        ai->st.stuck_counter = 0;
+
+        // update last known pos to avoid immediate re-trigger
+        if (!(ai->st.spxm == 0.0 && ai->st.spym == 0.0)) {
+            ai->st.last_x = ai->st.spxm;
+            ai->st.last_y = ai->st.spym;
+        } else if (ai->st.self) {
+            ai->st.last_x = ai->st.self->cx;
+            ai->st.last_y = ai->st.self->cy;
+        }
+
+        /* do not call recover_blocking(); stay in current state */
+        return;
+    } else {
+        /* Not near our net with an opponent close — perform normal backing recovery */
+        recover_blocking(ai);
+        return;
+    }
+
   }
 
   // States on this range are for soccer against the opponent
