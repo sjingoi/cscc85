@@ -21,6 +21,8 @@ void convert_to_metric(struct RoboAI *ai) {
 	ai->st.omym = ai->st.omy * CM_PER_PIXEL_Y;			       // Opponent motion vector
 	ai->st.odym = ai->st.ody * CM_PER_PIXEL_Y;                // Opponent heading direction (from blob shape)
 
+  normalize_vector(&ai->st.bmxm, &ai->st.bmym);
+
   if (ai->st.ball != NULL) {
     ai->st.bpxm = ai->st.ball->cx * CM_PER_PIXEL_X;
     ai->st.bpym = ai->st.ball->cy * CM_PER_PIXEL_Y; // Added slight downward offset due to camera projection
@@ -278,6 +280,19 @@ void bounded(double *x, double *y, double padding) {
 bool ball_closer_to_net(const struct RoboAI *ai) {
   double our_net_x = ((ai->st.side == 0) ? 0 : 170.0);
   bool result = fabs(ai->st.bpxm - our_net_x) < fabs(ai->st.spxm - our_net_x);
-  if (result) printf("We are in front of the ball!\n");
   return result;
+}
+
+double rays_intersect(double px1, double py1, double vx1, double vy1, double px2, double py2, double vx2, double vy2) {
+    double dx = px2 - px1;
+    double dy = py2 - py1;
+
+    double det = vx1 * vy2 - vy1 * vx2;
+
+    /* Rays are parallel or nearly parallel */
+    if (fabs(det) < 1e-12)
+        return 1.0/0.0;
+
+    double t = (dx * vy2 - dy * vx2) / det;
+    return t;
 }

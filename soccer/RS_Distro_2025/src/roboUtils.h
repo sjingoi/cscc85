@@ -2,8 +2,8 @@
 
 #include "roboAI.h"
 
-#define CM_PER_PIXEL_X 0.1328
-#define CM_PER_PIXEL_Y 0.1597
+#define CM_PER_PIXEL_X (170.0 / 640)
+#define CM_PER_PIXEL_Y (115.0 / 360)
 
 void convert_to_metric(struct RoboAI *ai);
 void determine_facing(struct RoboAI *ai);
@@ -22,3 +22,4 @@ void updateTargetDefensivePosition(struct RoboAI *ai);
 void updateEnemyDistance(struct RoboAI *ai);
 void bounded(double *x, double *y, double padding);
 bool ball_closer_to_net(const struct RoboAI *ai);
+double rays_intersect(double px1, double py1, double vx1, double vy1, double px2, double py2, double vx2, double vy2);

@@ -240,13 +240,18 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
   double da = angle_diff(ai->st.fa, atan2(ai->st.bpym - ai->st.spym, ai->st.bpxm - ai->st.spxm));
   double ball_aligned = fabs(da) < 0.03;
   int opponent_on_attack = 1.5 * opp_distance_to_ball < distance_to_ball;
+  double ball_net_lambda = rays_intersect(ai->st.bpxm, ai->st.bpym, ai->st.bmxm, ai->st.bmxm, opp_net_x, 0.0, 0.0, 1.0);
+  double ball_impact = ball_net_lambda * ai->st.bmym + ai->st.bpym;
+  bool ball_on_course = ball_net_lambda > 0 && fabs(ball_impact - (115.0 / 2)) <= 4.0; // Ball within 5.0 cm of net center
+  double kick_target_x = (ai->st.bpxm + 2 * opp_net_x) / 3;
+  double kick_target_y = (ai->st.bpym + 2 * opp_net_y) / 3;
 
   // States on this range are for soccer against the opponent
   if (ai->st.state < 100) {
     // State transitions
     switch(ai->st.state) {
       case 1: // Figure out forward direction
-        if (ai->st.driving_dir == 1) ai->st.state = 24;
+        if (ai->st.driving_dir == 1) ai->st.state = 11;
         break;
       case 11: // Go to defensive position
         if (defense_point_dist < 8.0 && !opponent_on_attack) ai->st.state = 21;
@@ -264,10 +269,13 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
       case 23: // Kick the ball
         if (distance_to_ball > 30.0) ai->st.state = 25;
         if (ball_closer_to_net(ai)) ai->st.state = 25; // If the ball is closer to our net than we are then go defend
-        if (ball_speed > 5.2) ai->st.state = 25;
+        if (ball_on_course && ball_net_lambda < 30 && ball_speed > 8.0) ai->st.state = 25;
+        // if (ball_speed > 12.0) ai->st.state = 25;
         break;
       case 25: // Wait for ball to leave claws
-        if (ball_speed < 2.0 || distance_to_ball > 15) ai->st.state = 11;
+        if (ball_on_course && distance_to_ball < 30.0) ai->st.state = 25; // Do not leave this state if the ball is on course to score
+        if (!ball_on_course) ai->st.state = 23;
+        if (ball_speed < 2.0 || distance_to_ball > 15.0) ai->st.state = 11;
         break;
       case 24: // KICKOFF
         if (ball_closer_to_net(ai)) ai->st.state = 11; // If the ball is closer to our net than we are then go defend
@@ -282,7 +290,7 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
         move_forward(100, ai);
         break;
       case 11: // Go to defensive position
-        safe_go_to_point(ai, 75, 10, defense_point_x, defense_point_y);
+        safe_go_to_point(ai, 100, 10, defense_point_x, defense_point_y);
         break;
       case 21: // Go to kick point
         safe_go_to_point(ai, 75, 10, kick_point_x, kick_point_y);
@@ -312,8 +320,8 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
       case 122: // Align
         if (ball_aligned) ai->st.state = 123;
       case 123: // Kick the ball
-        if (distance_to_ball > 30.0) ai->st.state = 121;
-        if (ball_speed > 4.5) ai->st.state = 125; // Ball has been kicked
+        if (ball_on_course && ball_net_lambda < 30 && ball_speed > 8.0) ai->st.state = 25;
+        if (ball_speed > 12.0) ai->st.state = 125; // Ball has been kicked
         break;
       case 125: // Wait for ball to leave claws
         // Dont leave this state
@@ -331,7 +339,7 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
         safe_go_to_point(ai, 20, 0, ai->st.bpxm, ai->st.bpym);
         break;
       case 123: // Kick the ball
-        safe_go_to_point(ai, 100, 20, opp_net_x, opp_net_y);
+        safe_go_to_point(ai, 100, 20, kick_target_x, kick_target_x);
         break;
       case 125: // Wait for ball to leave claws
         stop_moving(ai);
