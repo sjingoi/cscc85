@@ -159,3 +159,50 @@ int turn_towards_dir(struct RoboAI *ai, double t_dir_x, double t_dir_y) {
 
     return 1; // Aligned
 }
+
+int detect_ball(struct RoboAI *ai, double forward_dist, double lateral_dist, int team) {
+
+  // check if all are fixed
+  if (!ai || !ai->st.ballID || ai->st.ball == NULL) return 0;
+
+  // positions and forward vector
+  double bx = ai->st.bpxm;
+  double by = ai->st.bpym;
+  
+  double sx, sy, fx, fy;
+
+  if (team == 0) {
+    sx = ai->st.spxm;
+    sy = ai->st.spym;
+    fx = ai->st.fxm;
+    fy = ai->st.fym;
+  } else {
+    sx = ai->st.opxm;
+    sy = ai->st.opym;
+    fx = ai->st.odxm;
+    fy = ai->st.odym;
+  }
+
+  // bot to ball vector
+  double vx = bx - sx;
+  double vy = by - sy;
+
+  // perpendicular vector
+  double nx = -fy;
+  double ny = fx;
+
+  double f2 = fx*fx + fy*fy;
+  if (f2 <= 0) return 0;
+
+  // project onto robot basis
+  double forward = (vx*fx + vy*fy) / f2;
+  double lateral = (vx*nx + vy*ny) / f2;
+
+  // ball behind check
+  if (forward <= 0) return 0;
+
+  if (forward > forward_dist) return 0; // too far ahead
+  if (lateral > lateral_dist || lateral < -lateral_dist) return 0; // too far laterally
+
+  return 1; // all requirements fulfilled
+}
