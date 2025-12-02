@@ -40,8 +40,6 @@ double theta_th = 0.3;      // cos(angle threshold)
 double dis_th   = 50;       // distance threshold
 int drive_pw    = 30;
 int turn_pw     = 30;
-const double move_thresh = 2.0;
-const int consider_stuck = 50;
 
 // Distance from ball to position bot for kick (in pixels) we can update this later
 #define KICK_POSITION_DISTANCE 200.0
@@ -266,22 +264,7 @@ void AI_main(struct RoboAI *ai, struct blob *blobs, void *state)
       ai->st.state_timer++;
   }
 
-  double diffx = ai->st.spxm - ai->st.last_x;
-  double diffy = ai->st.spym - ai->st.last_y;
-  double dist_sq = diffx*diffx + diffy*diffy;
-
-  if (dist_sq < (move_thresh*move_thresh)) {
-      ai->st.stuck_counter++;
-  } else {
-      ai->st.stuck_counter = 0;
-      ai->st.last_x = ai->st.spxm;
-      ai->st.last_y = ai->st.spym;
-  }
-
-  if (ai->st.stuck_counter >= consider_stuck) {
-    recover_blocking(ai);
-    return;
-  }
+  stuck_detect(ai, our_net_x, our_net_y);
 
   // printf("Driving dir: %d\n", ai->st.driving_dir);
 
