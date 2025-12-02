@@ -199,3 +199,25 @@ int holding_ball(struct RoboAI *ai, double forward_dist, double lateral_dist) {
 
   return 1; // all requirements fulfilled
 }
+
+void recover_blocking(struct RoboAI *ai) {
+    // short safety stop
+    stop_moving(ai);
+    usleep(50000); // 50ms pause
+
+    // reverse (negative forward power) — adapt if you use a different API
+    move_forward(-50, ai);
+    usleep(1000000); // rev_ms in milliseconds
+
+    // refresh last-known position to avoid immediate re-trigger
+    if (!(ai->st.spxm == 0.0 && ai->st.spym == 0.0)) {
+        ai->st.last_x = ai->st.spxm;
+        ai->st.last_y = ai->st.spym;
+    } else if (ai->st.self) {
+        ai->st.last_x = (double) ai->st.self->cx;
+        ai->st.last_y = (double) ai->st.self->cy;
+    }
+
+    // reset stuck state
+    ai->st.stuck_counter = 0;
+}
