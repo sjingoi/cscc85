@@ -98,8 +98,14 @@ SensorValue GetPositionX(std::vector<int> exclusion_list, SensorStatus sensor_st
     exclusion_list.push_back(POSITION_X);
     SensorValue velocity_x_sensor_value = GetSensorValue(VELOCITY_X, exclusion_list, sensor_status, sensor_history);
     if (velocity_x_sensor_value.mode != 2) {
-        // TODO: Implement position x derivation
-        return velocity_x_sensor_value;
+        // Calculate current position using past position and current velocity
+        double past_position_x = sensor_history->position_x_hist[(sensor_history->current_index + 1 + READINGS) % READINGS];
+        double current_velocity_x = velocity_x_sensor_value.value;
+        double time_step = 4;
+        
+        sensor_value.value = past_position_x + (current_velocity_x * time_step);
+        sensor_value.mode = 1;
+        return sensor_value;
     }
 
     return sensor_value;
@@ -117,8 +123,14 @@ SensorValue GetPositionY(std::vector<int> exclusion_list, SensorStatus sensor_st
     exclusion_list.push_back(POSITION_Y);
     SensorValue velocity_y_sensor_value = GetSensorValue(VELOCITY_Y, exclusion_list, sensor_status, sensor_history);
     if (velocity_y_sensor_value.mode != 2) {
-        // TODO: Implement position y derivation
-        return velocity_y_sensor_value;
+        // Calculate current position using past position and current velocity
+        double past_position_y = sensor_history->position_y_hist[(sensor_history->current_index + 1 + READINGS) % READINGS];
+        double current_velocity_y = velocity_y_sensor_value.value;
+        double time_step = 4; // Same time step used in velocity calculation
+        
+        sensor_value.value = past_position_y + (-1 * current_velocity_y * time_step);
+        sensor_value.mode = 1; // Derived value
+        return sensor_value;
     }
 
     return sensor_value;
