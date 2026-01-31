@@ -240,14 +240,14 @@ enum LandingPhase determineLandingPhase(enum LandingPhase current_phase, const s
 }
 
 void displayState(const struct LanderState *lander_state, enum LandingPhase phase) {
- printf("===== Lander State ===============================\n");
- printf("PHASE:                        %d\n", phase);
- printf("Position X:                   %f\n", lander_state->pos_x);
+ //printf("===== Lander State ===============================\n");
+ //printf("PHASE:                        %d\n", phase);
+ //printf("Position X:                   %f\n", lander_state->pos_x);
  printf("Position Y:                   %f\n", lander_state->pos_y);
- printf("Velocity X:                   %f\n", lander_state->vel_x);
- printf("Velocity Y:                   %f\n", lander_state->vel_y);
- printf("Altitude Gnd:                 %f\n", lander_state->altitude);
- printf("Landing Acc:                  %f\n", lander_state->landing_acc);
+ //printf("Velocity X:                   %f\n", lander_state->vel_x);
+ //printf("Velocity Y:                   %f\n", lander_state->vel_y);
+ //printf("Altitude Gnd:                 %f\n", lander_state->altitude);
+ //printf("Landing Acc:                  %f\n", lander_state->landing_acc);
 }
 
 void Lander_Control(void)
@@ -303,6 +303,7 @@ void Lander_Control(void)
 **************************************************/
  UpdateSensorHistory(sensor_status, &sensor_history);
  UpdateSensorStatus(&sensor_status, &sensor_history, SONAR_DIST);
+ //PrintSensorStatus(sensor_status);
  
  ls = calculateLanderState(&sensor_history);
  landing_phase = determineLandingPhase(landing_phase, &ls);
